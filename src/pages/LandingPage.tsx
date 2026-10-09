@@ -117,7 +117,7 @@ export const LandingPage: React.FC = () => {
       </section>
 
       {/* HOW IT WORKS SECTION */}
-      <section className="py-20 bg-white border-b border-slate-200">
+      <section className="py-20 bg-[#F8FAFC] border-b border-slate-200/80">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-2xl mx-auto mb-16">
             <Badge variant="teal" className="mb-3">Step-by-Step Architecture</Badge>
@@ -134,40 +134,40 @@ export const LandingPage: React.FC = () => {
                 title: 'Describe & Explore',
                 desc: 'Describe symptoms to the AI Navigator or pinpoint affected areas on the interactive 3D Body Model.',
                 icon: Bot,
-                color: 'text-teal-600 bg-teal-50',
+                color: 'text-teal-600 bg-teal-50 border border-teal-200/60',
               },
               {
                 step: '02',
                 title: 'Understand Reports',
                 desc: 'Upload laboratory blood tests or pathology PDFs. The AI explains out-of-range parameters clearly.',
                 icon: FileText,
-                color: 'text-sky-600 bg-sky-50',
+                color: 'text-sky-600 bg-sky-50 border border-sky-200/60',
               },
               {
                 step: '03',
                 title: 'Discover Specialists',
                 desc: 'Find verified doctors matched specifically to your clinical requirements, language, and visit preference.',
                 icon: Search,
-                color: 'text-indigo-600 bg-indigo-50',
+                color: 'text-indigo-600 bg-indigo-50 border border-indigo-200/60',
               },
               {
                 step: '04',
                 title: 'Schedule & Track',
                 desc: 'Book instant calendar slots, manage medication schedules, and safeguard family health records in one vault.',
                 icon: Calendar,
-                color: 'text-emerald-600 bg-emerald-50',
+                color: 'text-emerald-600 bg-emerald-50 border border-emerald-200/60',
               },
-            ].map((item, idx) => {
+            ].map((item) => {
               const Icon = item.icon;
               return (
                 <div key={item.step} className="relative group">
-                  <div className="bg-[#F8FAFC] border border-slate-200 rounded-2xl p-6 h-full flex flex-col justify-between hover:border-teal-400 hover:shadow-md transition">
+                  <div className="bg-white border border-slate-200/90 rounded-2xl p-6 h-full flex flex-col justify-between hover:border-teal-400 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300">
                     <div>
                       <div className="flex items-center justify-between mb-4">
                         <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${item.color} shadow-xs`}>
                           <Icon className="w-6 h-6" />
                         </div>
-                        <span className="text-2xl font-black text-slate-300 group-hover:text-teal-500 transition">
+                        <span className="text-2xl font-black text-slate-300 group-hover:text-teal-500 transition-colors">
                           {item.step}
                         </span>
                       </div>
@@ -183,7 +183,7 @@ export const LandingPage: React.FC = () => {
       </section>
 
       {/* CORE CAPABILITIES / FEATURE SHOWCASE */}
-      <section id="features" className="py-20 bg-[#F8FAFC] border-b border-slate-200">
+      <section id="features" className="py-20 bg-slate-50/60 border-b border-slate-200/80">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-2xl mx-auto mb-16">
             <Badge variant="blue" className="mb-3">Comprehensive Healthcare SaaS</Badge>
@@ -194,9 +194,9 @@ export const LandingPage: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <Card hoverEffect className="p-7 flex flex-col justify-between">
+            <Card hoverEffect className="p-7 flex flex-col justify-between bg-white border border-slate-200/80 rounded-2xl shadow-sm hover:shadow-md">
               <div>
-                <div className="w-12 h-12 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center mb-5">
+                <div className="w-12 h-12 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center mb-5 border border-teal-200/60">
                   <Bot className="w-6 h-6" />
                 </div>
                 <h3 className="text-lg font-bold text-slate-900 mb-2">AI Healthcare Navigator</h3>
@@ -209,9 +209,9 @@ export const LandingPage: React.FC = () => {
               </Link>
             </Card>
 
-            <Card hoverEffect className="p-7 flex flex-col justify-between">
+            <Card hoverEffect className="p-7 flex flex-col justify-between bg-white border border-slate-200/80 rounded-2xl shadow-sm hover:shadow-md">
               <div>
-                <div className="w-12 h-12 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center mb-5">
+                <div className="w-12 h-12 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center mb-5 border border-sky-200/60">
                   <FileText className="w-6 h-6" />
                 </div>
                 <h3 className="text-lg font-bold text-slate-900 mb-2">Medical Report Analyzer</h3>
@@ -224,9 +224,9 @@ export const LandingPage: React.FC = () => {
               </Link>
             </Card>
 
-            <Card hoverEffect className="p-7 flex flex-col justify-between">
+            <Card hoverEffect className="p-7 flex flex-col justify-between bg-white border border-slate-200/80 rounded-2xl shadow-sm hover:shadow-md">
               <div>
-                <div className="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-5">
+                <div className="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-5 border border-indigo-200/60">
                   <Layers className="w-6 h-6" />
                 </div>
                 <h3 className="text-lg font-bold text-slate-900 mb-2">Interactive 3D Body Explorer</h3>
@@ -243,7 +243,7 @@ export const LandingPage: React.FC = () => {
       </section>
 
       {/* DOCTOR DISCOVERY PREVIEW */}
-      <section className="py-20 bg-white border-b border-slate-200">
+      <section className="py-20 bg-[#F8FAFC] border-b border-slate-200/80">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row md:items-end justify-between mb-12">
             <div>
@@ -262,13 +262,16 @@ export const LandingPage: React.FC = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {previewDoctors.map((doc) => (
-              <Card key={doc.id} hoverEffect className="p-5 flex flex-col justify-between">
+              <Card key={doc.id} hoverEffect className="p-5 flex flex-col justify-between bg-white border border-slate-200/80 rounded-2xl shadow-sm hover:shadow-lg">
                 <div>
                   <div className="flex items-start gap-4 mb-4">
                     <img
                       src={doc.avatarUrl}
                       alt={doc.name}
-                      className="w-14 h-14 rounded-2xl object-cover border border-slate-200 shrink-0"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&q=80&w=400';
+                      }}
+                      className="w-14 h-14 rounded-2xl object-cover border border-slate-200 shrink-0 shadow-xs"
                     />
                     <div>
                       <div className="flex items-center gap-1.5">
@@ -282,7 +285,7 @@ export const LandingPage: React.FC = () => {
 
                   <p className="text-xs text-slate-600 line-clamp-2 mb-4 leading-relaxed">{doc.about}</p>
 
-                  <div className="p-3 bg-slate-50 rounded-xl text-xs space-y-1 mb-4 border border-slate-100">
+                  <div className="p-3 bg-slate-50/80 rounded-xl text-xs space-y-1 mb-4 border border-slate-100">
                     <div className="flex justify-between text-slate-600">
                       <span>Clinic:</span>
                       <span className="font-medium text-slate-800 truncate max-w-[170px]">{doc.clinic}</span>
@@ -318,54 +321,66 @@ export const LandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* MULTILINGUAL & ACCESSIBILITY SECTION */}
-      <section className="py-20 bg-gradient-to-br from-[#0B1220] to-[#101B2D] text-white">
+      {/* MULTILINGUAL & ACCESSIBILITY SECTION — Styled as a sleek Flagship Showcase Card */}
+      <section className="py-20 bg-[#F8FAFC]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
-            <div className="lg:col-span-6 space-y-6">
-              <Badge variant="teal">Multilingual Healthcare Equity</Badge>
-              <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
-                Healthcare that speaks your native language.
-              </h2>
-              <p className="text-slate-300 text-sm sm:text-base leading-relaxed">
-                Medical terminology should never be an obstacle to life-saving care. HEALHEALTH is built natively with support for English, Hindi (हिंदी), and Marathi (मराठी) across symptom triage and report analysis.
-              </p>
+          <div className="relative rounded-3xl bg-gradient-to-br from-[#0B132B] via-[#0E1E38] to-[#0A2640] border border-slate-800 text-white p-8 sm:p-12 lg:p-16 shadow-2xl overflow-hidden">
+            {/* Ambient Background Glows */}
+            <div className="absolute top-0 right-0 w-80 h-80 bg-teal-500/10 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute bottom-0 left-0 w-80 h-80 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
 
-              <div className="space-y-3 pt-2">
-                <div className="flex items-center gap-3">
-                  <CheckCircle2 className="w-5 h-5 text-teal-400 shrink-0" />
-                  <span className="text-sm text-slate-200">Native language consultation matching with multilingual doctors</span>
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center relative z-10">
+              <div className="lg:col-span-6 space-y-6">
+                <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-teal-500/10 border border-teal-500/30 text-teal-300 text-xs font-semibold backdrop-blur-sm">
+                  <Globe className="w-3.5 h-3.5 text-teal-400" />
+                  <span>Multilingual Healthcare Equity</span>
                 </div>
-                <div className="flex items-center gap-3">
-                  <CheckCircle2 className="w-5 h-5 text-teal-400 shrink-0" />
-                  <span className="text-sm text-slate-200">Accessible high-contrast themes and font sizing controls</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <CheckCircle2 className="w-5 h-5 text-teal-400 shrink-0" />
-                  <span className="text-sm text-slate-200">Clear phonetic audio readout readiness for elder accessibility</span>
+                <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-white leading-tight">
+                  Healthcare that speaks your native language.
+                </h2>
+                <p className="text-slate-300 text-sm sm:text-base leading-relaxed">
+                  Medical terminology should never be an obstacle to life-saving care. HEALHEALTH is built natively with support for English, Hindi (हिंदी), and Marathi (मराठी) across symptom triage and report analysis.
+                </p>
+
+                <div className="space-y-3 pt-2">
+                  <div className="flex items-center gap-3">
+                    <CheckCircle2 className="w-5 h-5 text-teal-400 shrink-0" />
+                    <span className="text-sm text-slate-200">Native language consultation matching with multilingual doctors</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <CheckCircle2 className="w-5 h-5 text-teal-400 shrink-0" />
+                    <span className="text-sm text-slate-200">Accessible high-contrast themes and font sizing controls</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <CheckCircle2 className="w-5 h-5 text-teal-400 shrink-0" />
+                    <span className="text-sm text-slate-200">Clear phonetic audio readout readiness for elder accessibility</span>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <div className="lg:col-span-6">
-              <div className="bg-slate-900/80 border border-slate-700/80 rounded-2xl p-6 shadow-2xl backdrop-blur-md">
-                <div className="flex items-center justify-between border-b border-slate-800 pb-4 mb-4">
-                  <span className="text-xs font-semibold text-teal-400">Sample Symptom Prompt Comparison</span>
-                  <span className="text-[11px] text-slate-400">Language Engine</span>
-                </div>
+              <div className="lg:col-span-6">
+                <div className="bg-slate-900/90 border border-slate-700/80 rounded-2xl p-6 shadow-2xl backdrop-blur-md">
+                  <div className="flex items-center justify-between border-b border-slate-800 pb-4 mb-4">
+                    <span className="text-xs font-semibold text-teal-400 flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5 text-teal-400" />
+                      Sample Symptom Prompt Comparison
+                    </span>
+                    <span className="text-[11px] text-slate-400">Language Engine</span>
+                  </div>
 
-                <div className="space-y-3 text-xs">
-                  <div className="p-3 bg-slate-950/60 rounded-xl border border-slate-800">
-                    <span className="text-teal-400 font-bold block mb-1">English</span>
-                    <p className="text-slate-300">"I have had morning chest heaviness and shortness of breath during stairs for 3 days."</p>
-                  </div>
-                  <div className="p-3 bg-slate-950/60 rounded-xl border border-slate-800">
-                    <span className="text-teal-400 font-bold block mb-1">हिंदी (Hindi)</span>
-                    <p className="text-slate-300">"मुझे पिछले ३ दिनों से सीढ़ियाँ चढ़ते समय सीने में भारीपन और सांस फूलने की समस्या हो रही है।"</p>
-                  </div>
-                  <div className="p-3 bg-slate-950/60 rounded-xl border border-slate-800">
-                    <span className="text-teal-400 font-bold block mb-1">मराठी (Marathi)</span>
-                    <p className="text-slate-300">"गेल्या ३ दिवसांपासून जिन्यावरून जाताना छातीत जडपणा आणि श्वास घेण्यास त्रास जाणवत आहे."</p>
+                  <div className="space-y-3 text-xs">
+                    <div className="p-3 bg-slate-950/70 rounded-xl border border-slate-800">
+                      <span className="text-teal-400 font-bold block mb-1">English</span>
+                      <p className="text-slate-300">"I have had morning chest heaviness and shortness of breath during stairs for 3 days."</p>
+                    </div>
+                    <div className="p-3 bg-slate-950/70 rounded-xl border border-slate-800">
+                      <span className="text-teal-400 font-bold block mb-1">हिंदी (Hindi)</span>
+                      <p className="text-slate-300">"मुझे पिछले ३ दिनों से सीढ़ियाँ चढ़ते समय सीने में भारीपन और सांस फूलने की समस्या हो रही है।"</p>
+                    </div>
+                    <div className="p-3 bg-slate-950/70 rounded-xl border border-slate-800">
+                      <span className="text-teal-400 font-bold block mb-1">मराठी (Marathi)</span>
+                      <p className="text-slate-300">"गेल्या ३ दिवसांपासून जिन्यावरून जाताना छातीत जडपणा आणि श्वास घेण्यास त्रास जाणवत आहे."</p>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -375,7 +390,7 @@ export const LandingPage: React.FC = () => {
       </section>
 
       {/* PRIVACY, SAFETY AND TRUST SECTION */}
-      <section className="py-20 bg-white border-b border-slate-200">
+      <section className="py-20 bg-[#F8FAFC] border-t border-b border-slate-200/80">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-2xl mx-auto mb-16">
             <Badge variant="neutral" className="mb-3">Security & Clinical Integrity</Badge>
@@ -386,8 +401,8 @@ export const LandingPage: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="p-6 rounded-2xl bg-slate-50 border border-slate-200">
-              <div className="w-10 h-10 rounded-xl bg-teal-100 text-teal-700 flex items-center justify-center mb-4">
+            <div className="p-7 rounded-2xl bg-white border border-slate-200/80 shadow-sm hover:shadow-md transition-all">
+              <div className="w-11 h-11 rounded-xl bg-teal-50 text-teal-700 flex items-center justify-center mb-4 border border-teal-200/50">
                 <ShieldCheck className="w-5 h-5" />
               </div>
               <h3 className="text-base font-bold text-slate-900 mb-2">Non-Diagnostic Triage</h3>
@@ -396,8 +411,8 @@ export const LandingPage: React.FC = () => {
               </p>
             </div>
 
-            <div className="p-6 rounded-2xl bg-slate-50 border border-slate-200">
-              <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center mb-4">
+            <div className="p-7 rounded-2xl bg-white border border-slate-200/80 shadow-sm hover:shadow-md transition-all">
+              <div className="w-11 h-11 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center mb-4 border border-blue-200/50">
                 <Lock className="w-5 h-5" />
               </div>
               <h3 className="text-base font-bold text-slate-900 mb-2">Zero-Leakage Architecture</h3>
@@ -406,8 +421,8 @@ export const LandingPage: React.FC = () => {
               </p>
             </div>
 
-            <div className="p-6 rounded-2xl bg-slate-50 border border-slate-200">
-              <div className="w-10 h-10 rounded-xl bg-rose-100 text-rose-700 flex items-center justify-center mb-4">
+            <div className="p-7 rounded-2xl bg-white border border-slate-200/80 shadow-sm hover:shadow-md transition-all">
+              <div className="w-11 h-11 rounded-xl bg-rose-50 text-rose-700 flex items-center justify-center mb-4 border border-rose-200/50">
                 <Heart className="w-5 h-5" />
               </div>
               <h3 className="text-base font-bold text-slate-900 mb-2">Instant Emergency Redirection</h3>
@@ -433,7 +448,7 @@ export const LandingPage: React.FC = () => {
               return (
                 <div
                   key={faq.question}
-                  className="bg-white border border-slate-200 rounded-2xl overflow-hidden transition shadow-xs"
+                  className="bg-white border border-slate-200/90 rounded-2xl overflow-hidden transition shadow-xs hover:border-slate-300"
                 >
                   <button
                     type="button"
@@ -456,33 +471,44 @@ export const LandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* CALL TO ACTION BANNER */}
-      <section className="py-16 bg-gradient-to-r from-teal-600 to-blue-700 text-white text-center">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
-          <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
-            Ready to experience intelligent healthcare navigation?
-          </h2>
-          <p className="text-teal-100 text-sm sm:text-base max-w-xl mx-auto">
-            Explore the AI assistant, browse specialists, analyze clinical reports, and interact with the 3D body viewer today.
-          </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-2">
-            <Button
-              variant="secondary"
-              size="lg"
-              onClick={() => navigate('/signup')}
-              rightIcon={<ArrowRight className="w-5 h-5 text-slate-900" />}
-              className="bg-white text-slate-900 hover:bg-slate-100 font-bold"
-            >
-              Create Free Account
-            </Button>
-            <Button
-              variant="outline"
-              size="lg"
-              onClick={() => navigate('/dashboard')}
-              className="border-white/40 text-white hover:bg-white/10"
-            >
-              Explore Demo Sandbox
-            </Button>
+      {/* CALL TO ACTION BANNER — Styled as a Prestigious Floating Card */}
+      <section className="py-16 bg-[#F8FAFC]">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="rounded-3xl bg-gradient-to-r from-[#0B132B] via-[#0F2942] to-[#0B132B] border border-teal-500/30 p-10 sm:p-14 text-center text-white shadow-2xl relative overflow-hidden">
+            <div className="absolute -top-24 -left-24 w-72 h-72 bg-teal-500/15 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute -bottom-24 -right-24 w-72 h-72 bg-blue-600/15 rounded-full blur-3xl pointer-events-none" />
+
+            <div className="relative z-10 space-y-6">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-500/15 border border-teal-500/30 text-teal-300 text-xs font-semibold">
+                <Sparkles className="w-3.5 h-3.5 text-teal-400" />
+                <span>Begin Your Clinical Journey</span>
+              </div>
+              <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-white leading-tight">
+                Ready to experience intelligent healthcare navigation?
+              </h2>
+              <p className="text-slate-300 text-sm sm:text-base max-w-xl mx-auto leading-relaxed">
+                Explore the AI assistant, browse specialists, analyze clinical reports, and interact with the 3D body viewer today.
+              </p>
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-2">
+                <Button
+                  variant="teal"
+                  size="lg"
+                  onClick={() => navigate('/signup')}
+                  rightIcon={<ArrowRight className="w-5 h-5" />}
+                  className="w-full sm:w-auto shadow-lg shadow-teal-500/25"
+                >
+                  Create Free Account
+                </Button>
+                <Button
+                  variant="white-outline"
+                  size="lg"
+                  onClick={() => navigate('/dashboard')}
+                  className="w-full sm:w-auto"
+                >
+                  Explore Demo Sandbox
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
       </section>

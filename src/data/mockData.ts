@@ -73,7 +73,7 @@ export const MOCK_DOCTORS: Doctor[] = [
     nextAvailable: 'Thursday, 11:00 AM',
     about: 'Expertise in type 1 & 2 diabetes management, thyroid dysfunctions, gestational diabetes, and metabolic syndrome optimization.',
     availableSlots: ['11:00 AM', '12:15 PM', '02:30 PM', '04:00 PM'],
-    avatarUrl: 'https://images.unsplash.com/photo-1594824813681-ef06b9b3e157?auto=format&fit=crop&q=80&w=400',
+    avatarUrl: 'https://images.unsplash.com/photo-1594824813620-bf168759d57a?auto=format&fit=crop&q=80&w=400',
     isDemo: true,
   },
   {
