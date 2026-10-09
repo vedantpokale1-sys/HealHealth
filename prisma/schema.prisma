@@ -1,0 +1,130 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                      String        @id @default(uuid())
+  email                   String        @unique
+  password                String?
+  name                    String
+  phone                   String?
+  bloodGroup              String?
+  dob                     String?
+  gender                  String?
+  preferredLanguage       String        @default("en")
+  emergencyContactName    String?
+  emergencyContactPhone   String?
+  emergencyContactRelation String?
+  allergies               String        @default("[]") // JSON array string
+  chronicConditions       String        @default("[]") // JSON array string
+  appointments            Appointment[]
+  createdAt               DateTime      @default(now())
+  updatedAt               DateTime      @updatedAt
+}
+
+model Doctor {
+  id                String        @id
+  name              String
+  specialty         String
+  qualifications    String
+  experienceYears   Int
+  languages         String        @default("[]") // JSON array string
+  clinic            String
+  location          String
+  rating            Float         @default(4.8)
+  reviewCount       Int           @default(100)
+  consultationFee   Int           @default(1000)
+  consultationTypes String        @default("[\"video\",\"in-person\"]") // JSON array string
+  nextAvailable     String        @default("Tomorrow, 10:00 AM")
+  about             String
+  availableSlots    String        @default("[]") // JSON array string
+  avatarUrl         String
+  isDemo            Boolean       @default(true)
+  appointments      Appointment[]
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+}
+
+model HealthcareFacility {
+  id                String   @id
+  name              String
+  type              String   // 'hospital' | 'clinic' | 'doctor'
+  address           String
+  locality          String
+  city              String
+  pinCode           String
+  latitude          Float
+  longitude         Float
+  specialties       String   @default("[]") // JSON array string
+  phone             String
+  website           String?
+  openingHours      String
+  rating            Float    @default(4.8)
+  reviewCount       Int      @default(200)
+  isEmergency24x7   Boolean  @default(false)
+  isOpenNow         Boolean  @default(true)
+  insuranceAccepted String   @default("[]") // JSON array string
+  doctorId          String?
+  doctorName        String?
+  doctorSpecialty   String?
+  doctorAvatar      String?
+  imageUrl          String?
+  description       String?
+  bedsCount         Int?
+  emergencyPhone    String?
+  consultationFee   Int?
+  isDemo            Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model Appointment {
+  id              String   @id @default(uuid())
+  userId          String
+  doctorId        String
+  doctorName      String
+  doctorSpecialty String
+  doctorAvatar    String?
+  clinicName      String
+  date            String
+  time            String
+  type            String   @default("video") // 'video' | 'in-person'
+  status          String   @default("upcoming") // 'upcoming' | 'completed' | 'cancelled'
+  symptoms        String?
+  notes           String?
+  joinUrl         String?
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  doctor          Doctor   @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model MedicalKnowledge {
+  id                  String   @id @default(uuid())
+  topic               String
+  category            String
+  symptoms            String   @default("[]") // JSON array string of matched keywords
+  summary             String
+  clinicalGuidance    String
+  redFlags            String   @default("[]") // JSON array string of critical emergency triggers
+  suggestedSpecialties String  @default("[]") // JSON array string
+  sourceTitle         String
+  sourceUrl           String
+  reviewDate          String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
+
+model AiConversation {
+  id          String   @id @default(uuid())
+  userId      String?
+  modelUsed   String
+  messages    String   // JSON string of conversation turns
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}

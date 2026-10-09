@@ -1,0 +1,188 @@
+[
+  {
+    "id": "med_001",
+    "topic": "Sore Throat, Pharyngitis & Swallowing Difficulties",
+    "category": "Otolaryngology / Upper Respiratory",
+    "symptoms": ["sore throat", "pain swallowing", "difficulty swallowing", "scratchy throat", "mild fever", "swollen glands", "tonsils"],
+    "summary": "A sore throat is pain, scratchiness or irritation of the throat that often worsens when swallowing. Most cases are caused by viral infections (such as the common cold, adenovirus or influenza) and resolve spontaneously with supportive care.",
+    "clinicalGuidance": "Initial supportive self-care includes resting, staying well-hydrated with warm broths or soothing liquids, saltwater gargling (1/2 teaspoon salt in warm water), and humidification. Avoid unprescribed antibiotics since viral pharyngitis does not respond to antibiotic therapy.",
+    "redFlags": [
+      "Severe difficulty breathing or stridor",
+      "Inability to swallow own saliva or drooling",
+      "Inability to fully open the mouth (trismus), suggesting peritonsillar abscess",
+      "High persistent fever above 102°F (38.9°C)",
+      "Rash accompanying sore throat with strawberry tongue (Scarlet fever)"
+    ],
+    "suggestedSpecialties": ["ENT Specialist", "General Physician"],
+    "sourceTitle": "MedlinePlus: Sore Throat Overview",
+    "sourceUrl": "https://medlineplus.gov/sorethroat.html",
+    "reviewDate": "2024-08-15"
+  },
+  {
+    "id": "med_002",
+    "topic": "Chest Pain, Angina & Cardiovascular Warning Signs",
+    "category": "Cardiology",
+    "symptoms": ["chest pain", "chest pressure", "chest tightness", "radiating pain", "left arm pain", "jaw pain", "palpitations", "sweating", "cold sweat"],
+    "summary": "Chest pain can stem from cardiovascular, pulmonary, gastrointestinal or musculoskeletal causes. Because myocardial ischemia is acutely life-threatening, any unexplained, crushing or exertional chest discomfort must be urgently evaluated.",
+    "clinicalGuidance": "Stable non-cardiac chest discomfort that is reproducible by chest wall palpation may be musculoskeletal (costochondritis). However, acute ischemic cardiac pain is typically retrosternal, pressing or squeezing, exacerbated by exertion, and does not change with breathing or posture.",
+    "redFlags": [
+      "Crushing or pressing substernal chest discomfort lasting > 5 minutes",
+      "Radiation to left shoulder, arm, neck, jaw or back",
+      "Associated diaphoresis (cold sweats), shortness of breath, nausea, or lightheadedness",
+      "Sudden tearing chest pain radiating to the interscapular back (aortic dissection)",
+      "Unexplained syncope (fainting) or near-syncope with chest discomfort"
+    ],
+    "suggestedSpecialties": ["Cardiologist", "Emergency Medicine"],
+    "sourceTitle": "MedlinePlus: Chest Pain Assessment",
+    "sourceUrl": "https://medlineplus.gov/chestpain.html",
+    "reviewDate": "2024-07-20"
+  },
+  {
+    "id": "med_003",
+    "topic": "Headaches, Migraines & Neurological Red Flags",
+    "category": "Neurology",
+    "symptoms": ["headache", "migraine", "throbbing head", "photophobia", "sensitivity to light", "aura", "nausea with headache", "temple pain"],
+    "summary": "Headaches are broadly classified into primary headaches (migraine, tension-type, cluster) and secondary headaches (due to underlying vascular, infectious, or intracranial mass lesions).",
+    "clinicalGuidance": "Migraines present as unilateral, pulsating moderate-to-severe headaches aggravated by physical activity, accompanied by nausea, photophobia, or phonophobia. Rest in a dark, quiet room with adequate hydration and cold compresses can help relieve acute episodes.",
+    "redFlags": [
+      "Sudden onset severe headache reaching peak intensity within seconds ('thunderclap' headache)",
+      "Headache with fever, stiff neck, confusion, or altered mental status (meningitis)",
+      "Focal neurological deficits such as unilateral limb weakness, facial droop, or speech slurring",
+      "New onset headache in individuals over 50 years old or those with cancer / immunosuppression",
+      "Headache following acute head trauma or accompanied by seizures"
+    ],
+    "suggestedSpecialties": ["Neurologist", "General Physician"],
+    "sourceTitle": "MedlinePlus / NINDS: Migraine and Headache Disorders",
+    "sourceUrl": "https://medlineplus.gov/migraine.html",
+    "reviewDate": "2024-09-10"
+  },
+  {
+    "id": "med_004",
+    "topic": "Acute Dyspnea & Respiratory Distress",
+    "category": "Pulmonology",
+    "symptoms": ["shortness of breath", "difficulty breathing", "dyspnea", "wheezing", "chest tightness", "rapid breathing", "breathlessness", "asthma attack"],
+    "summary": "Dyspnea is the subjective sensation of breathing discomfort that ranges in severity. Acute onset dyspnea may herald pulmonary embolism, acute asthma exacerbation, pneumonia, pneumothorax, or acute heart failure.",
+    "clinicalGuidance": "Patients should remain in an upright, seated position to minimize work of breathing. Prescribed rescue inhalers (such as albuterol/salbutamol) should be utilized if the patient has a diagnosed history of asthma or COPD.",
+    "redFlags": [
+      "Severe respiratory distress, inability to speak full sentences in one breath",
+      "Cyanosis (bluish discoloration of lips, tongue, or fingertips)",
+      "Stridor or audible upper airway wheezing",
+      "Sudden pleuritic chest pain with dyspnea and tachycardia (pulmonary embolism)",
+      "Hypoxemia with oxygen saturation (SpO2) < 92% on room air"
+    ],
+    "suggestedSpecialties": ["Pulmonologist", "Emergency Medicine"],
+    "sourceTitle": "MedlinePlus: Breathing Problems",
+    "sourceUrl": "https://medlineplus.gov/breathingproblems.html",
+    "reviewDate": "2024-06-18"
+  },
+  {
+    "id": "med_005",
+    "topic": "Adult Fever & Acute Systemic Infections",
+    "category": "General Medicine / Infectious Disease",
+    "symptoms": ["fever", "chills", "high temperature", "sweating", "body aches", "fatigue", "rigors"],
+    "summary": "Fever is an elevation of body temperature above the normal circadian range (>38.0°C or 100.4°F), typically regulated by pyrogenic cytokine release in response to infectious or inflammatory stimuli.",
+    "clinicalGuidance": "Maintain oral fluid intake to prevent dehydration. Light clothing and comfortable room temperature help thermal regulation. Over-the-counter antipyretics (such as acetaminophen/paracetamol) can provide symptomatic comfort.",
+    "redFlags": [
+      "Fever > 103°F (39.4°C) unresponsive to antipyretics or lasting > 3 days",
+      "Fever accompanied by petechial or purpuric rash (non-blanching spots)",
+      "Fever accompanied by acute confusion, lethargy, or extreme prostration",
+      "Fever in immunocompromised patients, post-chemotherapy, or post-splenectomy",
+      "Fever with localized severe abdominal tenderness, dysuria, or productive purulent cough"
+    ],
+    "suggestedSpecialties": ["General Physician", "Internal Medicine"],
+    "sourceTitle": "MedlinePlus: Fever in Adults",
+    "sourceUrl": "https://medlineplus.gov/fever.html",
+    "reviewDate": "2024-05-12"
+  },
+  {
+    "id": "med_006",
+    "topic": "Acute & Chronic Abdominal Pain",
+    "category": "Gastroenterology",
+    "symptoms": ["stomach pain", "abdominal cramps", "belly ache", "nausea", "vomiting", "bloating", "indigestion", "heartburn", "acid reflux"],
+    "summary": "Abdominal pain may arise from luminal gastrointestinal organs (stomach, intestines), hepatobiliary systems (gallbladder, liver), pancreas, or genitourinary tracts.",
+    "clinicalGuidance": "Mild dyspepsia and bloating often improve with temporary dietary simplification, avoidance of spicy/fatty foods, avoiding lying flat after eating, and oral rehydration salts.",
+    "redFlags": [
+      "Severe sharp localized pain, especially in right lower quadrant (appendicitis) or right upper quadrant (cholecystitis)",
+      "Rigid, board-like abdomen with severe rebound tenderness (peritonitis)",
+      "Vomiting blood (hematemesis) or passing dark black tarry stools (melena)",
+      "Jaundice (yellowing of eyes and skin) associated with fever and abdominal pain",
+      "Inability to pass flatus or stool with severe progressive abdominal distension"
+    ],
+    "suggestedSpecialties": ["Gastroenterologist", "General Surgeon"],
+    "sourceTitle": "MedlinePlus: Abdominal Pain Evaluation",
+    "sourceUrl": "https://medlineplus.gov/abdominalpain.html",
+    "reviewDate": "2024-08-01"
+  },
+  {
+    "id": "med_007",
+    "topic": "Joint Pain, Arthritis & Musculoskeletal Strain",
+    "category": "Orthopedics / Rheumatology",
+    "symptoms": ["joint pain", "knee pain", "swollen joint", "stiffness", "arthritis", "back pain", "sprain", "shoulder pain"],
+    "summary": "Musculoskeletal discomfort often stems from mechanical strain, osteoarthritis, ligament sprains, or inflammatory arthritides.",
+    "clinicalGuidance": "Acute strains benefit from conservative PRICE principles: Protection, Rest, Ice application (15-20 min intervals), gentle Compression, and Elevation. Gentle range-of-motion stretching should be maintained.",
+    "redFlags": [
+      "Inability to bear any weight on the affected limb or visible bone/joint deformity",
+      "Hot, red, acutely swollen single joint with fever (septic arthritis emergency)",
+      "Back pain accompanied by bowel or bladder incontinence or numbness in the groin/saddle area (Cauda Equina Syndrome)",
+      "Severe numbness or motor weakness in a limb"
+    ],
+    "suggestedSpecialties": ["Orthopedic Surgeon", "Rheumatologist"],
+    "sourceTitle": "MedlinePlus: Joint Disorders & Arthritis",
+    "sourceUrl": "https://medlineplus.gov/jointdisorders.html",
+    "reviewDate": "2024-04-14"
+  },
+  {
+    "id": "med_008",
+    "topic": "Diabetes Mellitus, Hyperglycemia & Hypoglycemia",
+    "category": "Endocrinology",
+    "symptoms": ["excessive thirst", "frequent urination", "unexplained weight loss", "blurred vision", "shakiness", "dizziness", "sweating", "sugar level high"],
+    "summary": "Diabetes is a metabolic disorder characterized by chronic hyperglycemia resulting from defects in insulin secretion, action, or both.",
+    "clinicalGuidance": "Maintain routine self-monitoring of blood glucose. Follow a balanced low-glycemic Mediterranean-style diet, regular aerobic exercise, and strict adherence to physician-prescribed medications.",
+    "redFlags": [
+      "Acute hypoglycemia (<70 mg/dL): confusion, diaphoresis, tremors, altered consciousness needing immediate oral fast-acting carbohydrates",
+      "Kussmaul breathing (deep rapid breathing) with fruity breath odor, nausea, vomiting (Diabetic Ketoacidosis / DKA)",
+      "Severe dehydration with blood glucose > 600 mg/dL and altered sensorium (HHS)",
+      "Non-healing diabetic foot ulcer with signs of infection"
+    ],
+    "suggestedSpecialties": ["Endocrinologist", "General Physician"],
+    "sourceTitle": "MedlinePlus: Diabetes Management",
+    "sourceUrl": "https://medlineplus.gov/diabetes.html",
+    "reviewDate": "2024-07-05"
+  },
+  {
+    "id": "med_009",
+    "topic": "Acute Cerebrovascular Event / Stroke Recognition (BE FAST)",
+    "category": "Neurology / Emergency Medicine",
+    "symptoms": ["facial droop", "arm weakness", "slurred speech", "numbness", "vision loss", "sudden imbalance", "confusion", "stroke signs"],
+    "summary": "An acute ischemic stroke occurs when blood supply to part of the brain is interrupted, depriving brain tissue of oxygen and nutrients. Immediate intervention within the thrombolytic window is paramount.",
+    "clinicalGuidance": "Immediately apply the BE FAST protocol: Balance (loss of balance), Eyes (sudden vision loss), Face (facial drooping on one side), Arms (arm drift or weakness), Speech (slurred or garbled speech), Time (time to call emergency medical services immediately). Do not offer food, fluids or oral medications.",
+    "redFlags": [
+      "Any sudden unilateral weakness, numbness, or facial asymmetry",
+      "Sudden loss of speech, word-finding difficulty, or inability to comprehend speech",
+      "Sudden acute dizziness, ataxia, or loss of coordination",
+      "Sudden severe unprovoked headache"
+    ],
+    "suggestedSpecialties": ["Neurologist", "Emergency Medicine"],
+    "sourceTitle": "MedlinePlus / CDC: Stroke Recognition & BE FAST",
+    "sourceUrl": "https://medlineplus.gov/stroke.html",
+    "reviewDate": "2024-09-01"
+  },
+  {
+    "id": "med_010",
+    "topic": "Allergic Rhinitis, Asthma & Bronchospasm",
+    "category": "Pulmonology / Allergy",
+    "symptoms": ["sneezing", "runny nose", "congestion", "itchy eyes", "dry cough", "wheezing at night", "dust allergy"],
+    "summary": "Allergic rhinitis and allergic asthma are IgE-mediated inflammatory conditions of the respiratory mucous membranes triggered by environmental allergens.",
+    "clinicalGuidance": "Identify and minimize allergen exposure (dust mites, pollen, pet dander). Use saline nasal irrigation. Over-the-counter non-sedating second-generation antihistamines or intranasal corticosteroid sprays may be considered under clinician supervision.",
+    "redFlags": [
+      "Sudden facial, lip, or laryngeal angioedema with stridor (anaphylaxis emergency)",
+      "Wheezing that fails to improve after taking standard prescribed bronchodilator doses",
+      "Silent chest (absence of wheezing due to critical airway obstruction in a struggling patient)",
+      "Cyanosis or SpO2 dropping below 92%"
+    ],
+    "suggestedSpecialties": ["Pulmonologist", "Allergist / Immunologist"],
+    "sourceTitle": "MedlinePlus: Asthma and Allergy Care",
+    "sourceUrl": "https://medlineplus.gov/asthma.html",
+    "reviewDate": "2024-06-30"
+  }
+]
