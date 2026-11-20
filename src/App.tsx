@@ -21,8 +21,13 @@ import { ReportAnalyzerPage } from './pages/ReportAnalyzerPage';
 import { HealthRecordsPage } from './pages/HealthRecordsPage';
 import { MedicationManagerPage } from './pages/MedicationManagerPage';
 import { FamilyHealthPage } from './pages/FamilyHealthPage';
-import { BodyExplorerPage } from './pages/BodyExplorerPage';
 import { LocationsPage } from './pages/LocationsPage';
+
+// Heavy 3D route — lazy-loaded so the anatomical viewer and Three.js
+// never slow down the main bundle.
+const BodyExplorerPage = React.lazy(() =>
+  import('./pages/BodyExplorerPage').then((m) => ({ default: m.BodyExplorerPage }))
+);
 import { NotificationsPage } from './pages/NotificationsPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { HelpSupportPage } from './pages/HelpSupportPage';
@@ -52,7 +57,21 @@ export function App() {
               <Route path="/health-records" element={<HealthRecordsPage />} />
               <Route path="/medications" element={<MedicationManagerPage />} />
               <Route path="/family-health" element={<FamilyHealthPage />} />
-              <Route path="/body-explorer" element={<BodyExplorerPage />} />
+              <Route
+                path="/body-explorer"
+                element={
+                  <React.Suspense
+                    fallback={
+                      <div className="h-64 flex flex-col items-center justify-center gap-3 text-sm text-slate-500">
+                        <span className="w-7 h-7 rounded-full border-2 border-brand-600 border-t-transparent animate-spin" />
+                        Preparing the 3D anatomy viewer…
+                      </div>
+                    }
+                  >
+                    <BodyExplorerPage />
+                  </React.Suspense>
+                }
+              />
               <Route path="/notifications" element={<NotificationsPage />} />
               <Route path="/settings" element={<SettingsPage />} />
               <Route path="/help" element={<HelpSupportPage />} />

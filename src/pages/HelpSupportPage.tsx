@@ -56,7 +56,7 @@ export const HelpSupportPage: React.FC = () => {
       </div>
 
       {/* Emergency Immediate Action Alert Card */}
-      <div className="p-5 bg-gradient-to-r from-rose-600 to-red-700 text-white rounded-2xl shadow-md space-y-3">
+      <div className="p-5 bg-rose-600 text-white rounded-xl shadow-sm space-y-3">
         <div className="flex items-center gap-2 font-bold text-sm">
           <ShieldAlert className="w-5 h-5 text-amber-300" />
           <span>Experiencing an Acute Medical Emergency?</span>
@@ -76,12 +76,12 @@ export const HelpSupportPage: React.FC = () => {
       </div>
 
       {/* AI Limitations & Boundaries */}
-      <Card className="p-6 bg-slate-900 text-white space-y-3 border-slate-800">
-        <div className="flex items-center gap-2 text-xs font-bold text-teal-400">
-          <Bot className="w-4 h-4 text-teal-400" />
+      <Card className="p-6 bg-ivory space-y-3 border-hairline">
+        <div className="flex items-center gap-2 text-xs font-bold text-brand-800">
+          <Bot className="w-4 h-4 text-brand-600" />
           <span>AI Clinical Scope & Medical Guardrails</span>
         </div>
-        <p className="text-xs text-slate-300 leading-relaxed">
+        <p className="text-xs text-ink-soft leading-relaxed">
           HEALHEALTH uses artificial intelligence to interpret layperson descriptions into relevant clinical specialties and explain laboratory biomarker terminology. <strong>It does not diagnose medical conditions, alter dosages, or prescribe pharmaceuticals.</strong> Always follow instructions from your treating physician.
         </p>
       </Card>

@@ -19,6 +19,8 @@ import {
   CalendarCheck,
   Building2,
   Cpu,
+  RefreshCw,
+  Edit3,
 } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
@@ -31,6 +33,8 @@ interface ExtendedChatMessage extends ChatMessage {
   recommendedDoctors?: Doctor[];
   recommendedFacilities?: HealthcareFacility[];
   isEmergencyAlert?: boolean;
+  isError?: boolean;
+  failedPrompt?: string;
 }
 
 export const AiNavigatorPage: React.FC = () => {
@@ -45,34 +49,34 @@ export const AiNavigatorPage: React.FC = () => {
   // Model Selection
   const [availableModels, setAvailableModels] = useState<AiModelOption[]>([
     {
+      id: 'nvidia/nemotron-3.5-super-vl-120b-a12b',
+      name: 'Nemotron 3.5 Super VL (120B)',
+      tag: 'Advanced Multimodal Clinical Reasoning',
+      provider: 'NVIDIA NIM',
+    },
+    {
       id: 'nvidia/nemotron-3.5-lightning-30b-a3b',
-      name: 'NVIDIA Nemotron 3.5 Lightning 30B',
-      tag: 'Ultra-Fast Clinical Reasoning',
+      name: 'Nemotron 3.5 Lightning (30B)',
+      tag: 'Rapid Clinical Triage & Guidance',
       provider: 'NVIDIA NIM',
     },
     {
-      id: 'meta/muse-glimmer-30b',
-      name: 'Meta Muse Glimmer 30B',
-      tag: 'Advanced Dialogue & Empathy',
-      provider: 'NVIDIA NIM',
-    },
-    {
-      id: 'nvidia/nemotron-3-ultra-550b-a55b',
-      name: 'NVIDIA Nemotron 3 Ultra 550B',
-      tag: 'Flagship Deep Medical Reasoning',
+      id: 'nvidia/nemotron-3-nano-omni-30b-a3b-reasoning',
+      name: 'Nemotron 3 Nano Omni',
+      tag: 'Deep Reasoning & Clinical Analysis',
       provider: 'NVIDIA NIM',
     },
   ]);
-  const [selectedModel, setSelectedModel] = useState<string>('nvidia/nemotron-3.5-lightning-30b-a3b');
+  const [selectedModel, setSelectedModel] = useState<string>('nvidia/nemotron-3.5-super-vl-120b-a12b');
   const [selectedLanguage, setSelectedLanguage] = useState<'en' | 'hi' | 'mr'>('en');
 
   const [messages, setMessages] = useState<ExtendedChatMessage[]>([
     {
       id: 'msg_init',
       sender: 'ai',
-      text: "Hello! I am your HEALHEALTH AI Healthcare Navigator powered by NVIDIA NIM. Describe any physical symptoms, medications, or lab report questions. I will guide you with grounded clinical evidence and suggest verified medical specialists.",
+      text: "Hello! I am your HEALHEALTH AI Healthcare Navigator. Describe any physical symptoms, medications, or lab report questions. I will guide you with evidence-grounded clinical information, suggest follow-up questions, and connect you with verified medical specialists.",
       timestamp: 'Just now',
-      modelUsed: 'nvidia/nemotron-3.5-lightning-30b-a3b',
+      modelUsed: 'nvidia/nemotron-3.5-super-vl-120b-a12b',
     },
   ]);
 
@@ -81,6 +85,9 @@ export const AiNavigatorPage: React.FC = () => {
     api.getAiModels().then((res) => {
       if (res.models && res.models.length > 0) {
         setAvailableModels(res.models);
+        if (res.defaultModel) {
+          setSelectedModel(res.defaultModel);
+        }
       }
     });
   }, []);
@@ -106,32 +113,34 @@ export const AiNavigatorPage: React.FC = () => {
   ];
 
   const handleSend = async (userText: string) => {
-    if (!userText.trim() || isTyping) return;
+    const trimmed = userText.trim();
+    if (!trimmed || isTyping) return;
 
     const userMsg: ExtendedChatMessage = {
       id: `msg_${Date.now()}`,
       sender: 'user',
-      text: userText,
+      text: trimmed,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     };
 
-    setMessages((prev) => [...prev, userMsg]);
+    // Prepare current history snapshot before adding the new message
+    const historyPayload = messages
+      .filter((m) => m.id !== 'msg_init' && !m.isError)
+      .slice(-6)
+      .map((m) => ({
+        role: m.sender === 'user' ? ('user' as const) : ('assistant' as const),
+        content: m.text,
+      }));
+
+    // Clear input once the message is successfully accepted for processing
     setInput('');
+    setMessages((prev) => [...prev, userMsg]);
     setIsTyping(true);
 
     try {
-      // Build conversation history format
-      const historyPayload = messages
-        .filter((m) => m.id !== 'msg_init')
-        .slice(-4)
-        .map((m) => ({
-          role: m.sender === 'user' ? ('user' as const) : ('assistant' as const),
-          content: m.text,
-        }));
-
-      // Call Backend NVIDIA NIM AI Route
+      // Call Backend AI Chat Route
       const response = await api.sendAiChat({
-        message: userText,
+        message: trimmed,
         history: historyPayload,
         modelId: selectedModel,
         language: selectedLanguage,
@@ -153,16 +162,16 @@ export const AiNavigatorPage: React.FC = () => {
 
       setMessages((prev) => [...prev, aiMsg]);
     } catch (err: any) {
-      console.error('AI chat failed:', err);
-      // Fallback message
-      const fallbackMsg: ExtendedChatMessage = {
+      console.error('AI chat request failed:', err);
+      const errMsg: ExtendedChatMessage = {
         id: `msg_ai_err_${Date.now()}`,
         sender: 'ai',
-        text: `We are connecting to your healthcare assistant. Please review: general supportive care includes rest and hydration. If you experience critical symptoms, consult local emergency services immediately.\n\n*Educational Guidance Disclaimer: HEALHEALTH AI is an educational assistant.*`,
+        text: `AI Assistant Communication Error: ${err.message || 'Unable to reach the AI healthcare model.'}\n\nPlease check your connection and try again. You can retry sending your question below.`,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        suggestedSpecialty: 'General Physician',
+        isError: true,
+        failedPrompt: trimmed,
       };
-      setMessages((prev) => [...prev, fallbackMsg]);
+      setMessages((prev) => [...prev, errMsg]);
     } finally {
       setIsTyping(false);
     }
@@ -170,7 +179,6 @@ export const AiNavigatorPage: React.FC = () => {
 
   const handleVoiceToggle = () => {
     if (!isListening) {
-      // Speech recognition if available
       const SpeechRecognition =
         (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
 
@@ -188,12 +196,11 @@ export const AiNavigatorPage: React.FC = () => {
         recognition.onerror = () => setIsListening(false);
         recognition.onend = () => setIsListening(false);
       } else {
-        // Fallback simulation
         setIsListening(true);
         setTimeout(() => {
           setIsListening(false);
           setInput('I have a sore throat, mild fever, and pain when swallowing.');
-        }, 2200);
+        }, 2000);
       }
     } else {
       setIsListening(false);
@@ -212,42 +219,44 @@ export const AiNavigatorPage: React.FC = () => {
     ]);
   };
 
+  const activeModelObj = availableModels.find((m) => m.id === selectedModel);
+
   return (
-    <div className="h-[calc(100vh-140px)] flex flex-col bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-lg animate-in fade-in duration-200">
+    <div className="h-[calc(100vh-140px)] flex flex-col bg-white rounded-xl border border-hairline overflow-hidden shadow-soft animate-fade-in">
       {/* Header bar with Model Selector */}
-      <div className="px-4 sm:px-6 py-3.5 bg-slate-900 text-white flex flex-wrap items-center justify-between gap-3 border-b border-slate-800">
+      <div className="px-4 sm:px-6 py-3.5 bg-white border-b border-hairline flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-teal-500 to-sky-500 flex items-center justify-center text-white shadow-md shrink-0">
-            <Bot className="w-5 h-5" />
+          <div className="w-10 h-10 rounded-lg bg-ink flex items-center justify-center text-white shrink-0">
+            <Bot className="w-5 h-5 text-brand-400" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="text-sm sm:text-base font-bold text-white">AI Healthcare Navigator</h2>
-              <span className="flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                NVIDIA NIM LIVE
+              <h2 className="text-sm sm:text-base font-bold text-ink">Healthcare Navigator</h2>
+              <span className="flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                ONLINE
               </span>
             </div>
-            <p className="text-[11px] text-slate-400 hidden sm:block">
-              Evidence-Grounded Clinical Guidance • Doctor & Map Dispatch
+            <p className="text-[11px] text-slate-500 hidden sm:block">
+              Careful, source-backed health information — not a diagnosis. Powered by {activeModelObj?.name || 'AI'}.
             </p>
           </div>
         </div>
 
         {/* Model Selector & Language Controls */}
         <div className="flex flex-wrap items-center gap-2">
-          {/* 3 Selectable NVIDIA NIM Models */}
-          <div className="flex items-center gap-1.5 bg-slate-800/90 border border-slate-700 rounded-xl px-2.5 py-1 text-xs">
-            <Cpu className="w-3.5 h-3.5 text-teal-400 shrink-0" />
+          {/* Selectable Models */}
+          <div className="flex items-center gap-1.5 bg-slate-50 border border-hairline rounded-lg px-2.5 py-1 text-xs">
+            <Cpu className="w-3.5 h-3.5 text-brand-600 shrink-0" />
             <select
               value={selectedModel}
               onChange={(e) => setSelectedModel(e.target.value)}
-              className="bg-transparent border-none text-xs font-semibold text-slate-200 focus:outline-none cursor-pointer max-w-[210px] sm:max-w-[260px] truncate"
-              title="Select NVIDIA NIM Foundation Model"
+              className="bg-transparent border-none text-xs font-semibold text-ink focus:outline-none cursor-pointer max-w-[210px] sm:max-w-[260px] truncate"
+              title="Select AI Clinical Foundation Model"
             >
               {availableModels.map((m) => (
-                <option key={m.id} value={m.id} className="bg-slate-900 text-white">
-                  {m.name}
+                <option key={m.id} value={m.id} className="bg-white text-ink">
+                  {m.name} ({m.provider})
                 </option>
               ))}
             </select>
@@ -257,7 +266,7 @@ export const AiNavigatorPage: React.FC = () => {
           <select
             value={selectedLanguage}
             onChange={(e) => setSelectedLanguage(e.target.value as any)}
-            className="bg-slate-800/90 border border-slate-700 text-slate-300 rounded-xl px-2 py-1 text-xs font-semibold focus:outline-none cursor-pointer"
+            className="bg-slate-50 border border-hairline text-ink-soft rounded-lg px-2 py-1.5 text-xs font-semibold focus:outline-none cursor-pointer"
           >
             <option value="en">English (EN)</option>
             <option value="hi">हिंदी (Hindi)</option>
@@ -268,7 +277,7 @@ export const AiNavigatorPage: React.FC = () => {
           <button
             type="button"
             onClick={resetChat}
-            className="flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs text-slate-300 hover:text-white hover:bg-slate-800 transition border border-slate-700"
+            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs text-ink-soft hover:text-ink hover:bg-slate-100 transition border border-hairline"
             title="Start new conversation"
           >
             <RotateCcw className="w-3.5 h-3.5" />
@@ -304,6 +313,8 @@ export const AiNavigatorPage: React.FC = () => {
                   className={`p-4 sm:p-5 rounded-2xl shadow-xs text-sm leading-relaxed ${
                     isUser
                       ? 'bg-blue-600 text-white rounded-br-none'
+                      : msg.isError
+                      ? 'bg-rose-50 border border-rose-300 text-rose-950 rounded-bl-none shadow-xs'
                       : msg.isEmergencyAlert
                       ? 'bg-rose-50 border-2 border-rose-500 text-rose-950 rounded-bl-none shadow-md'
                       : 'bg-white border border-slate-200 text-slate-900 rounded-bl-none'
@@ -311,8 +322,34 @@ export const AiNavigatorPage: React.FC = () => {
                 >
                   <p className="whitespace-pre-line leading-relaxed">{msg.text}</p>
 
+                  {/* Retry Action on Failure */}
+                  {msg.isError && msg.failedPrompt && (
+                    <div className="mt-3 pt-3 border-t border-rose-200 flex flex-wrap items-center justify-between gap-2">
+                      <span className="text-xs text-rose-700">Request could not be completed.</span>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setInput(msg.failedPrompt!)}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition"
+                        >
+                          <Edit3 className="w-3 h-3" />
+                          <span>Edit</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleSend(msg.failedPrompt!)}
+                          disabled={isTyping}
+                          className="inline-flex items-center gap-1.5 px-3 py-1 bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white font-semibold text-xs rounded-lg transition shadow-xs"
+                        >
+                          <RefreshCw className={`w-3 h-3 ${isTyping ? 'animate-spin' : ''}`} />
+                          <span>Retry</span>
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Grounded Citation Sources */}
-                  {!isUser && msg.citations && msg.citations.length > 0 && (
+                  {!isUser && !msg.isError && msg.citations && msg.citations.length > 0 && (
                     <div className="mt-3 pt-3 border-t border-slate-100 flex flex-wrap items-center gap-1.5">
                       <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mr-1">
                         Verified Sources:
@@ -333,7 +370,7 @@ export const AiNavigatorPage: React.FC = () => {
                   )}
 
                   {/* Model Footer Tag */}
-                  {!isUser && msg.modelUsed && (
+                  {!isUser && msg.modelUsed && !msg.isError && (
                     <div className="mt-2 text-[10px] text-slate-400 flex items-center justify-between">
                       <span>Powered by {msg.modelUsed}</span>
                       <span>{msg.timestamp}</span>
@@ -341,7 +378,7 @@ export const AiNavigatorPage: React.FC = () => {
                   )}
 
                   {/* Recommended Doctors Cards */}
-                  {!isUser && msg.recommendedDoctors && msg.recommendedDoctors.length > 0 && (
+                  {!isUser && !msg.isError && msg.recommendedDoctors && msg.recommendedDoctors.length > 0 && (
                     <div className="mt-4 pt-3 border-t border-slate-100 space-y-2">
                       <div className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
                         <Stethoscope className="w-3.5 h-3.5 text-teal-600" />
@@ -394,7 +431,7 @@ export const AiNavigatorPage: React.FC = () => {
                   )}
 
                   {/* Recommended Facilities Map Link */}
-                  {!isUser && msg.recommendedFacilities && msg.recommendedFacilities.length > 0 && (
+                  {!isUser && !msg.isError && msg.recommendedFacilities && msg.recommendedFacilities.length > 0 && (
                     <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between">
                       <div className="text-xs font-semibold text-slate-700 flex items-center gap-1">
                         <Building2 className="w-3.5 h-3.5 text-blue-600" />
@@ -424,7 +461,7 @@ export const AiNavigatorPage: React.FC = () => {
                 <span className="w-2 h-2 rounded-full bg-teal-500 animate-bounce [animation-delay:0.2s]"></span>
                 <span className="w-2 h-2 rounded-full bg-teal-500 animate-bounce [animation-delay:0.4s]"></span>
               </div>
-              <span>NVIDIA NIM ({availableModels.find((m) => m.id === selectedModel)?.name}) analyzing clinical symptoms...</span>
+              <span>{activeModelObj?.name || 'AI Assistant'} analyzing clinical symptoms...</span>
             </div>
           </div>
         )}
@@ -444,7 +481,8 @@ export const AiNavigatorPage: React.FC = () => {
                 key={idx}
                 type="button"
                 onClick={() => handleSend(prompt)}
-                className="text-xs bg-white hover:bg-teal-50 border border-slate-200 hover:border-teal-300 text-slate-700 px-3 py-1.5 rounded-full whitespace-nowrap transition shadow-xs text-left"
+                disabled={isTyping}
+                className="text-xs bg-white hover:bg-teal-50 border border-slate-200 hover:border-teal-300 text-slate-700 px-3 py-1.5 rounded-full whitespace-nowrap transition shadow-xs text-left disabled:opacity-50"
               >
                 {prompt}
               </button>
@@ -458,7 +496,9 @@ export const AiNavigatorPage: React.FC = () => {
         <form
           onSubmit={(e) => {
             e.preventDefault();
-            handleSend(input);
+            if (!isTyping && input.trim()) {
+              handleSend(input);
+            }
           }}
           className="flex items-center gap-2"
         >
@@ -479,8 +519,17 @@ export const AiNavigatorPage: React.FC = () => {
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder={`Describe symptoms or ask clinical questions (${availableModels.find((m) => m.id === selectedModel)?.name})...`}
-            className="flex-1 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                if (!isTyping && input.trim()) {
+                  handleSend(input);
+                }
+              }
+            }}
+            disabled={isTyping}
+            placeholder={`Describe symptoms or ask clinical questions (${activeModelObj?.name || 'AI'})...`}
+            className="flex-1 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition disabled:opacity-60"
           />
 
           <button

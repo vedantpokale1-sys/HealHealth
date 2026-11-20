@@ -2,11 +2,11 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { evaluateSafety } from '../services/safetyService';
 import { retrieveMedicalContext } from '../services/retrievalService';
-import { generateClinicalGuidance, SUPPORTED_MODELS } from '../services/nimService';
+import { generateClinicalGuidance, SUPPORTED_MODELS } from '../services/aiService';
 
 export const aiRouter = Router();
 
-// GET /api/v1/ai/models - Return the 3 selectable NVIDIA NIM models
+// GET /api/v1/ai/models - Return the 3 selectable Bynara models
 aiRouter.get('/models', (req, res) => {
   res.json({
     models: SUPPORTED_MODELS,
@@ -28,12 +28,12 @@ const chatSchema = z.object({
   language: z.enum(['en', 'hi', 'mr']).optional().default('en'),
 });
 
-// POST /api/v1/ai/chat - AI Healthcare Navigator with NVIDIA NIM
-aiRouter.post('/chat', async (req, res, next) => {
+// POST /api/v1/ai/chat - AI Healthcare Navigator with Bynara Router
+aiRouter.post('/chat', async (req, res) => {
   try {
     const parse = chatSchema.safeParse(req.body);
     if (!parse.success) {
-      return res.status(400).json({ error: parse.error.format() });
+      return res.status(400).json({ error: 'Please enter a valid message' });
     }
 
     const { message, history, modelId, language } = parse.data;
@@ -44,7 +44,7 @@ aiRouter.post('/chat', async (req, res, next) => {
     // 2. Retrieve grounded medical knowledge, doctors, and facilities
     const retrieval = retrieveMedicalContext(message);
 
-    // 3. Generate guidance via NVIDIA NIM
+    // 3. Generate guidance via AI Router
     const aiResult = await generateClinicalGuidance({
       userMessage: message,
       history,
@@ -64,8 +64,12 @@ aiRouter.post('/chat', async (req, res, next) => {
       recommendedDoctors: retrieval.matchedDoctors,
       recommendedFacilities: retrieval.matchedFacilities,
     });
-  } catch (err) {
-    next(err);
+  } catch (err: any) {
+    console.error('[AI Chat Error]:', err.message);
+    res.status(502).json({
+      error: err.message || 'AI Healthcare Assistant service encountered an error.',
+      timestamp: new Date().toISOString(),
+    });
   }
 });
 
@@ -76,11 +80,11 @@ const triageSchema = z.object({
 });
 
 // POST /api/v1/ai/triage - Dedicated symptom triage assessment
-aiRouter.post('/triage', async (req, res, next) => {
+aiRouter.post('/triage', async (req, res) => {
   try {
     const parse = triageSchema.safeParse(req.body);
     if (!parse.success) {
-      return res.status(400).json({ error: parse.error.format() });
+      return res.status(400).json({ error: 'Symptoms description is required' });
     }
 
     const { symptoms } = parse.data;
@@ -106,7 +110,11 @@ aiRouter.post('/triage', async (req, res, next) => {
       recommendedDoctors: retrieval.matchedDoctors,
       recommendedFacilities: retrieval.matchedFacilities,
     });
-  } catch (err) {
-    next(err);
+  } catch (err: any) {
+    console.error('[AI Triage Error]:', err.message);
+    res.status(502).json({
+      error: err.message || 'Triage assessment service unavailable.',
+      timestamp: new Date().toISOString(),
+    });
   }
 });

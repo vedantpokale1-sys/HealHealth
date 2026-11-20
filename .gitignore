@@ -30,6 +30,7 @@ dist-ssr
 *.sqlite
 dev.db
 prisma/dev.db
+cloudflared.exe
 
 *.suo
 *.ntvs*
@@ -37,3 +38,5 @@ prisma/dev.db
 *.sln
 *.sw?
 
+
+.vercel

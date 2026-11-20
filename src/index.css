@@ -1,16 +1,149 @@
 @import "tailwindcss";
 @import "leaflet/dist/leaflet.css";
 
-/* Leaflet Modern Styling Overrides */
+/* ============================================================
+   HEALHEALTH — Clinical Design System
+   Deep medical navy · clean white · soft ivory · muted teal.
+   Restrained, human, trustworthy. No glow, no neon, no noise.
+   ============================================================ */
+
+@theme {
+  --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-display: 'Inter', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  /* Deep medical navy */
+  --color-ink: #14293b;
+  --color-ink-soft: #4a5d6e;
+
+  /* Surfaces: clean white + soft clinical ivory */
+  --color-canvas: #f7f7f5;
+  --color-ivory: #faf9f6;
+  --color-hairline: #e5eaee;
+
+  /* Muted teal / jade accent (calm, clinical) */
+  --color-brand-50: #f0fdfa;
+  --color-brand-100: #ccfbf1;
+  --color-brand-200: #99f6e4;
+  --color-brand-300: #5eead4;
+  --color-brand-400: #2dd4bf;
+  --color-brand-500: #14b8a6;
+  --color-brand-600: #0d9488;
+  --color-brand-700: #0f766e;
+  --color-brand-800: #115e59;
+  --color-brand-900: #134e4a;
+
+  /* Occasional dark navy panels (used sparingly) */
+  --color-deep: #122a3d;
+  --color-deep-2: #1b3850;
+  --color-deep-3: #234662;
+
+  --shadow-soft: 0 1px 2px rgba(20, 41, 59, 0.04), 0 4px 16px -8px rgba(20, 41, 59, 0.1);
+  --shadow-lift: 0 2px 4px rgba(20, 41, 59, 0.05), 0 12px 28px -12px rgba(20, 41, 59, 0.18);
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background-color: var(--color-canvas);
+    color: var(--color-ink);
+    overflow-x: hidden;
+    text-rendering: optimizeLegibility;
+  }
+
+  h1, h2, h3, h4 {
+    font-family: var(--font-display);
+    letter-spacing: -0.015em;
+    font-weight: 700;
+  }
+
+  ::selection {
+    background: var(--color-brand-600);
+    color: #fff;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-brand-600);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  input, textarea, select {
+    font-family: var(--font-sans);
+  }
+}
+
+/* ---------- Surfaces ---------- */
+
+/* Solid, restrained panel for sticky headers */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  border-bottom: 1px solid var(--color-hairline);
+}
+
+.hairline {
+  border: 1px solid var(--color-hairline);
+}
+
+/* Navy information panel — flat, professional (no glow) */
+.panel-navy {
+  background: linear-gradient(180deg, var(--color-deep-2) 0%, var(--color-deep) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* Subtle card hover — no glow, gentle lift only */
+.card-lift {
+  transition: box-shadow 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+}
+.card-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lift);
+  border-color: #c9d6dc;
+}
+
+/* ---------- Motion (purposeful, minimal) ---------- */
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.animate-fade-up {
+  animation: fade-up 0.5s ease-out both;
+}
+.animate-fade-in {
+  animation: fade-in 0.4s ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  .animate-fade-up, .animate-fade-in {
+    animation: none;
+  }
+}
+
+/* ---------- Leaflet overrides (calm clinical map) ---------- */
+
 .leaflet-popup-content-wrapper {
-  background: rgba(15, 23, 42, 0.94) !important;
-  backdrop-filter: blur(12px) !important;
-  -webkit-backdrop-filter: blur(12px) !important;
-  color: #F8FAFC !important;
-  border-radius: 1rem !important;
+  background: #ffffff !important;
+  color: var(--color-ink) !important;
+  border-radius: 0.75rem !important;
   padding: 0 !important;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.4), 0 8px 10px -6px rgba(0, 0, 0, 0.3) !important;
-  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  box-shadow: 0 8px 24px -8px rgba(20, 41, 59, 0.35) !important;
+  border: 1px solid var(--color-hairline) !important;
   overflow: hidden;
 }
 
@@ -20,12 +153,13 @@
 }
 
 .leaflet-popup-tip {
-  background: rgba(15, 23, 42, 0.94) !important;
-  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  background: #ffffff !important;
+  border: 1px solid var(--color-hairline) !important;
 }
 
 .leaflet-container {
-  font-family: inherit !important;
+  font-family: var(--font-sans) !important;
+  background: #e8edf0;
 }
 
 .custom-map-pin {
@@ -33,61 +167,11 @@
   border: none;
 }
 
-@layer base {
-  :root {
-    --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    --font-mono: 'JetBrains Mono', monospace;
-    
-    /* Design tokens */
-    --color-midnight: #0B1220;
-    --color-deep-navy: #101B2D;
-    --color-primary-blue: #2563EB;
-    --color-healthcare-teal: #0D9488;
-    --color-pale-blue: #EFF6FF;
-    --color-main-bg: #F8FAFC;
-    --color-main-text: #0F172A;
-    --color-secondary-text: #64748B;
-    --color-border: #E2E8F0;
-    --color-success: #15803D;
-    --color-warning: #B45309;
-    --color-critical: #B91C1C;
-  }
+/* ---------- Scrollbars ---------- */
 
-  body {
-    font-family: var(--font-sans);
-    background-color: var(--color-main-bg);
-    color: var(--color-main-text);
-    overflow-x: hidden;
-  }
-}
-
-/* Custom Glassmorphism & UI effects */
-.glass-panel {
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(226, 232, 240, 0.8);
-}
-
-.glass-panel-dark {
-  background: rgba(16, 27, 45, 0.75);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.glow-teal {
-  box-shadow: 0 0 35px -5px rgba(13, 148, 136, 0.35);
-}
-
-.glow-blue {
-  box-shadow: 0 0 35px -5px rgba(37, 99, 235, 0.35);
-}
-
-/* Custom scrollbars */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
 }
 
 ::-webkit-scrollbar-track {
@@ -95,20 +179,13 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #CBD5E1;
+  background: #c8d3d9;
   border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #94A3B8;
-}
-
-/* Pulse animation helper */
-@keyframes subtle-pulse {
-  0%, 100% { transform: scale(1); opacity: 1; }
-  50% { transform: scale(1.05); opacity: 0.85; }
-}
-
-.animate-subtle-pulse {
-  animation: subtle-pulse 3s ease-in-out infinite;
+  background: #a7b8c1;
+  background-clip: content-box;
 }

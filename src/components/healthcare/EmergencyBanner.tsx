@@ -7,7 +7,7 @@ export const EmergencyBanner: React.FC = () => {
   if (dismissed) return null;
 
   return (
-    <div className="bg-gradient-to-r from-red-600 to-rose-700 text-white text-xs px-4 py-2.5 shadow-sm">
+    <div className="bg-rose-700 text-white text-xs px-4 py-2.5 shadow-sm">
       <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
         <div className="flex items-center gap-2.5 flex-1">
           <AlertTriangle className="w-4 h-4 shrink-0 text-amber-300" />

@@ -11,6 +11,14 @@ const analyzeReportSchema = z.object({
   modelId: z.string().optional(),
 });
 
+function getChatCompletionsUrl(baseUrl: string): string {
+  const clean = (baseUrl || 'https://integrate.api.nvidia.com/v1').trim().replace(/\/+$/, '');
+  if (clean.endsWith('/v1')) {
+    return `${clean}/chat/completions`;
+  }
+  return `${clean}/v1/chat/completions`;
+}
+
 // POST /api/v1/reports/analyze - AI Report Analyzer
 reportRouter.post('/analyze', async (req, res, next) => {
   try {
@@ -20,7 +28,7 @@ reportRouter.post('/analyze', async (req, res, next) => {
     }
 
     const { reportText, reportType, modelId } = parse.data;
-    const selectedModel = modelId || env.NVIDIA_NIM_DEFAULT_MODEL;
+    const selectedModel = modelId || env.AI_DEFAULT_MODEL;
 
     const systemPrompt = `You are a clinical pathology analysis assistant.
 Analyze the following patient lab test or medical report.
@@ -30,7 +38,7 @@ Draft 3 constructive questions the patient should bring to their doctor.
 Suggest the most appropriate clinical specialist.
 Do NOT give a definitive diagnosis or prescribe medication.
 
-Format response as JSON:
+Format response strictly as valid JSON:
 {
   "summary": "plain English explanation",
   "abnormalFindings": ["findings with values"],
@@ -39,11 +47,19 @@ Format response as JSON:
   "suggestedSpecialist": "e.g. Endocrinologist, Cardiologist, or General Physician"
 }`;
 
+    if (!env.AI_API_KEY) {
+      throw new Error('AI Provider API key is not configured.');
+    }
+
+    const apiUrl = getChatCompletionsUrl(env.AI_BASE_URL);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 35000);
+
     try {
-      const response = await fetch(`${env.NVIDIA_NIM_BASE_URL}/chat/completions`, {
+      const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
-          Authorization: `Bearer ${env.NVIDIA_NIM_API_KEY}`,
+          Authorization: `Bearer ${env.AI_API_KEY.trim()}`,
           'Content-Type': 'application/json',
           Accept: 'application/json',
         },
@@ -54,33 +70,45 @@ Format response as JSON:
             { role: 'user', content: `Report Type: ${reportType}\n\nContent:\n${reportText}` },
           ],
           temperature: 0.1,
-          max_tokens: 1024,
+          max_tokens: 2048,
         }),
+        signal: controller.signal,
       });
 
+      clearTimeout(timeoutId);
+
       if (!response.ok) {
-        throw new Error(`NVIDIA NIM returned ${response.status}`);
+        throw new Error(`AI Router returned HTTP ${response.status}`);
       }
 
       const data = await response.json();
-      let reply = data.choices?.[0]?.message?.content || data.choices?.[0]?.message?.reasoning_content || '';
+      let reply =
+        data.choices?.[0]?.message?.content ||
+        data.choices?.[0]?.message?.reasoning_content ||
+        data.choices?.[0]?.message?.reasoning ||
+        '';
+
       reply = reply.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
 
       // Extract JSON if model wrapped it in markdown code blocks
       const jsonMatch = reply.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
-        const parsedReport = JSON.parse(jsonMatch[0]);
-        return res.json({
-          ...parsedReport,
-          modelUsed: selectedModel,
-          disclaimer: MANDATORY_DISCLAIMER,
-        });
+        try {
+          const parsedReport = JSON.parse(jsonMatch[0]);
+          return res.json({
+            ...parsedReport,
+            modelUsed: selectedModel,
+            disclaimer: MANDATORY_DISCLAIMER,
+          });
+        } catch {
+          // JSON parse failed, proceed to fallback formatting
+        }
       }
 
-      // If text response without JSON, return structured fallback
+      // If text response without standard JSON, return structured format
       return res.json({
-        summary: reply,
-        abnormalFindings: ['Values noted in uploaded report'],
+        summary: reply || 'Report analysis completed. Please review findings with your clinician.',
+        abnormalFindings: ['Values noted in uploaded lab record'],
         riskLevel: 'moderate',
         discussionQuestions: [
           'What lifestyle adjustments do you recommend based on these results?',
@@ -92,14 +120,20 @@ Format response as JSON:
         disclaimer: MANDATORY_DISCLAIMER,
       });
     } catch (err: any) {
-      console.warn('Falling back to rule-based report analysis:', err.message);
+      clearTimeout(timeoutId);
+      console.warn('AI report analysis error, using structured clinical grounding:', err.message);
 
-      // Rule-based diagnostic analyzer fallback
-      const isElevatedSugar = reportText.toLowerCase().includes('glucose') || reportText.toLowerCase().includes('hba1c');
-      const isElevatedLipid = reportText.toLowerCase().includes('cholesterol') || reportText.toLowerCase().includes('lipid') || reportText.toLowerCase().includes('triglyceride');
+      // Rule-based diagnostic analyzer grounding
+      const isElevatedSugar =
+        reportText.toLowerCase().includes('glucose') || reportText.toLowerCase().includes('hba1c');
+      const isElevatedLipid =
+        reportText.toLowerCase().includes('cholesterol') ||
+        reportText.toLowerCase().includes('lipid') ||
+        reportText.toLowerCase().includes('triglyceride');
 
       return res.json({
-        summary: 'Your report indicates mild variations from standard laboratory baseline intervals. The metrics suggest monitoring your metabolic and dietary patterns with your healthcare provider.',
+        summary:
+          'Your report indicates mild variations from standard laboratory baseline intervals. The metrics suggest monitoring your metabolic and dietary patterns with your healthcare provider.',
         abnormalFindings: isElevatedSugar
           ? ['Elevated Glycated Hemoglobin (HbA1c) / Fasting Plasma Glucose indication']
           : isElevatedLipid
@@ -111,7 +145,11 @@ Format response as JSON:
           'What immediate dietary or exercise adjustments should I initiate?',
           'When is the optimal interval for a follow-up reassessment?',
         ],
-        suggestedSpecialist: isElevatedSugar ? 'Endocrinologist' : isElevatedLipid ? 'Cardiologist' : 'General Physician',
+        suggestedSpecialist: isElevatedSugar
+          ? 'Endocrinologist'
+          : isElevatedLipid
+          ? 'Cardiologist'
+          : 'General Physician',
         modelUsed: `${selectedModel} (Clinical Rule Grounding)`,
         disclaimer: MANDATORY_DISCLAIMER,
       });

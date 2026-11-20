@@ -1,20 +1,21 @@
 # HEALHEALTH — AI-Powered Healthcare Navigation Platform
 
-HEALHEALTH is a full-stack, AI-driven healthcare navigation, doctor discovery, and smart appointment coordination SaaS platform. It combines evidence-grounded clinical AI navigation with NVIDIA NIM foundation models, geospatial hospital/clinic mapping, 3D anatomical exploration, and appointment booking.
+HEALHEALTH is a full-stack, AI-driven healthcare navigation, doctor discovery, and smart appointment coordination SaaS platform. It combines evidence-grounded clinical AI navigation with high-performance foundation models, geospatial hospital/clinic mapping, 3D anatomical exploration, and appointment booking.
 
 ---
 
 ## 🌟 Key Architecture & Capabilities
 
-1. **AI Healthcare Navigator (NVIDIA NIM)**
-   - Connects to NVIDIA NIM foundation models hosted at `https://integrate.api.nvidia.com/v1`.
+1. **AI Healthcare Navigator (byNara AI Router)**
+   - Connects to high-performance clinical foundation models via `https://router.bynara.id`.
    - **User-Selectable Models**:
-     - `nvidia/nemotron-3.5-lightning-30b-a3b` — Ultra-Fast Clinical Reasoning
-     - `meta/muse-glimmer-30b` — Dialogue & Empathy
-     - `nvidia/nemotron-3-ultra-550b-a55b` — Deep Medical Reasoning
+     - `agnes-2.5-flash` — Fast Multimodal Clinical Reasoning (Default)
+     - `nemotron-3.5-lightning-free` — Rapid Clinical Triage & Guidance
+     - `laguna-s-2.1` — Concise Clinical Navigation
    - **Grounded Medical Knowledge Retrieval**: Clinical guidance grounded in public-domain medical reference datasets (MedlinePlus / NIH, NHS Health A-Z).
    - **Deterministic Emergency Triage**: Pre-generation red-flag evaluation (stroke signs, cardiac chest pressure, anaphylaxis, severe dyspnea) immediately triggers emergency protocols and local dispatch contacts (112 / 911).
    - **Multilingual Support**: English, Hindi (हिंदी), and Marathi (मराठी).
+   - **Resilience & Error Recovery**: 1-click retry on connection failures, timeout protection, duplicate submission prevention, and clean chain-of-thought stripping.
 
 2. **Relational Database & Concurrency Protection**
    - Node.js + TypeScript + Express backend under `/api/v1`.
@@ -43,7 +44,7 @@ heal
 *(or `npm run heal`, or double-click `heal.bat`)*
 
 This runs:
-- **Backend API Server**: [http://localhost:5000](http://localhost:5000) (REST API + SQLite + NVIDIA NIM)
+- **Backend API Server**: [http://localhost:5000](http://localhost:5000) (REST API + SQLite + byNara AI Router)
 - **Frontend Web App**: [http://localhost:5173](http://localhost:5173) (Vite + React + 3D + Leaflet Map)
 
 ---
@@ -59,8 +60,8 @@ npm run dev
 # Run automated tests
 npm run test:server
 
-# Seed sample data
-npm run seed
+# Build production bundle
+npm run build
 ```
 
 ---
@@ -69,8 +70,8 @@ npm run seed
 
 | Method | Endpoint | Description |
 |---|---|---|
-| `GET` | `/api/v1/health` | Service health, database status, and NIM configuration status |
-| `GET` | `/api/v1/ai/models` | List of the 3 selectable NVIDIA NIM models |
+| `GET` | `/api/v1/health` | Service health, database status, and AI configuration status |
+| `GET` | `/api/v1/ai/models` | List of the 3 selectable AI models |
 | `POST` | `/api/v1/ai/chat` | AI Healthcare Navigator chat with grounded retrieval and triage |
 | `POST` | `/api/v1/ai/triage` | Dedicated symptom triage and urgency risk evaluation |
 | `GET` | `/api/v1/doctors` | List or search verified doctors (`?query=`, `?specialty=`, `?location=`) |
@@ -89,6 +90,6 @@ npm run seed
 ---
 
 ## 🔒 Security & Medical Privacy
-- **API Key Protection**: `NVIDIA_NIM_API_KEY` is strictly confined to the server environment and never exposed in the client bundle.
+- **API Key Protection**: `AI_API_KEY` is strictly confined to the server environment and never exposed in the client bundle.
 - **Privacy First**: Patient Protected Health Information (PHI) is not logged or transmitted outside required clinical endpoints.
 - **Safety Protocol**: All generated responses include the mandatory clinical educational disclaimer.

@@ -20,22 +20,25 @@ export const Button: React.FC<ButtonProps> = ({
   disabled,
   ...props
 }) => {
-  const baseStyles = 'inline-flex items-center justify-center font-medium rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-1 disabled:opacity-50 disabled:cursor-not-allowed select-none active:scale-[0.98]';
+  const baseStyles =
+    'inline-flex items-center justify-center font-semibold rounded-lg transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 disabled:opacity-50 disabled:cursor-not-allowed select-none active:scale-[0.99]';
 
   const sizeStyles = {
-    sm: 'text-xs px-3 py-1.5 gap-1.5',
+    sm: 'text-xs px-3 py-2 gap-1.5',
     md: 'text-sm px-4 py-2.5 gap-2',
-    lg: 'text-base px-6 py-3.5 gap-2.5 font-semibold',
+    lg: 'text-base px-6 py-3 gap-2.5',
   };
 
   const variantStyles = {
-    primary: 'bg-blue-600 hover:bg-blue-700 text-white shadow-sm shadow-blue-500/20 focus:ring-blue-500',
-    teal: 'bg-teal-600 hover:bg-teal-700 text-white shadow-sm shadow-teal-500/20 focus:ring-teal-500',
-    secondary: 'bg-slate-100 hover:bg-slate-200 text-slate-900 focus:ring-slate-400',
-    outline: 'border border-slate-300 hover:border-slate-400 bg-white hover:bg-slate-50 text-slate-700 focus:ring-slate-400',
-    'white-outline': 'border border-white/30 hover:border-white/60 bg-white/10 hover:bg-white/20 text-white backdrop-blur-sm focus:ring-white/40',
-    ghost: 'text-slate-600 hover:text-slate-900 hover:bg-slate-100 focus:ring-slate-300',
-    danger: 'bg-red-600 hover:bg-red-700 text-white shadow-sm shadow-red-500/20 focus:ring-red-500',
+    primary: 'bg-ink hover:bg-deep-2 text-white focus-visible:ring-ink',
+    teal: 'bg-brand-600 hover:bg-brand-700 text-white focus-visible:ring-brand-600',
+    secondary: 'bg-slate-100 hover:bg-slate-200 text-ink focus-visible:ring-slate-400',
+    outline:
+      'border border-slate-300 bg-white hover:bg-slate-50 hover:border-slate-400 text-ink focus-visible:ring-slate-400',
+    'white-outline':
+      'border border-white/30 hover:border-white/60 bg-white/10 hover:bg-white/20 text-white focus-visible:ring-white/40',
+    ghost: 'text-slate-600 hover:text-ink hover:bg-slate-100 focus-visible:ring-slate-300',
+    danger: 'bg-rose-600 hover:bg-rose-700 text-white focus-visible:ring-rose-500',
   };
 
   return (

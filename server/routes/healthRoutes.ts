@@ -13,7 +13,7 @@ healthRouter.get('/health', (req, res) => {
     dbStatus = `error: ${e.message}`;
   }
 
-  const nimConfigured = Boolean(env.NVIDIA_NIM_API_KEY && env.NVIDIA_NIM_API_KEY.startsWith('nvapi-'));
+  const aiConfigured = Boolean(env.AI_API_KEY && env.AI_API_KEY.length > 5);
 
   res.json({
     status: 'ok',
@@ -21,10 +21,11 @@ healthRouter.get('/health', (req, res) => {
     version: '1.0.0',
     timestamp: new Date().toISOString(),
     database: dbStatus,
-    nim: {
-      configured: nimConfigured,
-      defaultModel: env.NVIDIA_NIM_DEFAULT_MODEL,
-      provider: 'NVIDIA NIM (hosted at integrate.api.nvidia.com)',
+    ai: {
+      configured: aiConfigured,
+      defaultModel: env.AI_DEFAULT_MODEL,
+      provider: 'byNara AI Router',
+      baseUrl: env.AI_BASE_URL,
     },
   });
 });

@@ -69,7 +69,7 @@ if (!process.env.VERCEL) {
 🚀 HEALHEALTH Full-Stack Backend Running!
 📡 Server Port: http://localhost:${PORT}
 🩺 API Health:  http://localhost:${PORT}/api/v1/health
-🤖 NVIDIA NIM:  Configured (integrate.api.nvidia.com)
+🤖 AI Router:   Configured (${env.AI_BASE_URL} - ${env.AI_DEFAULT_MODEL})
 🗄  Database:    Relational SQLite (dev.db)
 =====================================================
     `);

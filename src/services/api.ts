@@ -60,25 +60,25 @@ export const api = {
     return {
       models: [
         {
+          id: 'nvidia/nemotron-3.5-super-vl-120b-a12b',
+          name: 'Nemotron 3.5 Super VL (120B)',
+          tag: 'Advanced Multimodal Clinical Reasoning',
+          provider: 'NVIDIA NIM',
+        },
+        {
           id: 'nvidia/nemotron-3.5-lightning-30b-a3b',
-          name: 'NVIDIA Nemotron 3.5 Lightning 30B',
-          tag: 'Ultra-Fast Clinical Reasoning',
+          name: 'Nemotron 3.5 Lightning (30B)',
+          tag: 'Rapid Clinical Triage & Guidance',
           provider: 'NVIDIA NIM',
         },
         {
-          id: 'meta/muse-glimmer-30b',
-          name: 'Meta Muse Glimmer 30B',
-          tag: 'Advanced Dialogue & Empathy',
-          provider: 'NVIDIA NIM',
-        },
-        {
-          id: 'nvidia/nemotron-3-ultra-550b-a55b',
-          name: 'NVIDIA Nemotron 3 Ultra 550B',
-          tag: 'Flagship Deep Medical Reasoning',
+          id: 'nvidia/nemotron-3-nano-omni-30b-a3b-reasoning',
+          name: 'Nemotron 3 Nano Omni',
+          tag: 'Deep Reasoning & Clinical Analysis',
           provider: 'NVIDIA NIM',
         },
       ],
-      defaultModel: 'nvidia/nemotron-3.5-lightning-30b-a3b',
+      defaultModel: 'nvidia/nemotron-3.5-super-vl-120b-a12b',
     };
   },
 
@@ -94,18 +94,32 @@ export const api = {
     modelId?: string;
     language?: string;
   }): Promise<ChatResponse> {
-    const res = await fetch(`${API_BASE}/ai/chat`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message, history, modelId, language }),
-    });
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 65000);
 
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.error || `AI Chat error: ${res.status}`);
+    try {
+      const res = await fetch(`${API_BASE}/ai/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message, history, modelId, language }),
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || `AI Chat error: HTTP ${res.status}`);
+      }
+
+      return await res.json();
+    } catch (err: any) {
+      clearTimeout(timeoutId);
+      if (err.name === 'AbortError') {
+        throw new Error('AI Navigator request timed out. Please try again.');
+      }
+      throw err;
     }
-
-    return res.json();
   },
 
   // AI Triage

@@ -1,0 +1,41 @@
+================================================================================
+HEALHEALTH AI – COPYRIGHT SOURCE CODE VERIFICATION REPORT
+================================================================================
+
+Verification Date: 2026-11-17 11:44:15
+Status: COMPLIANT & VERIFIED
+
+1. PROJECT SOURCE DISCOVERY AUDIT:
+   - Total project source files discovered: 59 genuine original source files (.ts, .tsx, .prisma)
+   - Total project lines of code: 12,558 lines
+   - Third-party exclusions verified: node_modules, .git, .vercel, dist, .env, dev.db, package-lock.json
+
+2. SELECTION & MANIFEST AUDIT:
+   - Number of original files included in the prioritized sequence: 29
+   - Subsystems covered: Backend Entrypoint, Clinical AI Engine, Safety Screening,
+     Database Models, Retrieval Grounding, Frontend Navigation, 3D Anatomy & Geospatial Discovery
+
+3. INDIAN COPYRIGHT OFFICE STATUTORY REQUIREMENT (RULE 70 / FORM XIV):
+   - Total raw paginated source code: 106 pages
+   - Condition: Source code exceeds 20 pages (106 raw pages)
+   - Prescribed Action: Inclusion of First 10 Pages and Last 10 Pages
+   - Statutory First 10 & Last 10 requirement satisfied: YES (Strictly satisfied)
+   - First 10 pages contain: schema.prisma, env.ts, server.ts, aiService.ts, App.tsx, main.tsx
+   - Last 10 pages contain: EmergencyBanner.tsx, TelehealthRoomModal.tsx, DoctorDiscoveryPage.tsx, HealthRecordsPage.tsx
+
+4. PDF SPECIFICATION & INTEGRITY METRICS:
+   - Total PDF pages: 23 pages (Cover + TOC + Subsystems + 20 Code Pages = 23 Pages)
+   - PDF file size: 120379 bytes (0.11 MB) [Strictly under 10 MB limit]
+   - Encryption / Password: NONE (Unprotected, fully accessible)
+   - Text layer: 100% Vector & selectable text (No screenshots or scanned images used)
+   - Syntax Highlighting: Pygments Token-level syntax coloring applied
+   - Line numbers & headers/footers: Included on every page
+
+5. CONFIDENTIALITY & CREDENTIAL SCREENING AUDIT:
+   - .env / .env.local / private keys: EXCLUDED
+   - Plaintext passwords, API secrets, JWT secrets in source code: 0 hits (Audited and clean)
+   - Database binaries (dev.db, dev.db-wal): EXCLUDED
+
+6. CONCLUSION:
+   - The PDF 'HEALHEALTH_AI_Source_Code_Copyright.pdf' meets all legal, technical, and structural
+     criteria for submission under 'Work to be copyrighted' for Indian Copyright Registration.

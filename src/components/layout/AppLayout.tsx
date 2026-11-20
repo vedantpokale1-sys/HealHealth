@@ -8,30 +8,38 @@ import { Menu, X, LayoutDashboard, Bot, Search, Calendar, FolderHeart } from 'lu
 export const AppLayout: React.FC = () => {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
+  const mobileTabs = [
+    { to: '/dashboard', icon: LayoutDashboard, label: 'Home' },
+    { to: '/ai-navigator', icon: Bot, label: 'AI Pilot' },
+    { to: '/doctors', icon: Search, label: 'Doctors' },
+    { to: '/appointments', icon: Calendar, label: 'Visits' },
+    { to: '/health-records', icon: FolderHeart, label: 'Records' },
+  ];
+
   return (
-    <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-sans">
+    <div className="min-h-screen bg-canvas flex flex-col">
       <EmergencyBanner />
 
       <div className="flex-1 flex">
-        {/* Desktop Sidebar */}
+        {/* Desktop sidebar */}
         <div className="hidden lg:block shrink-0">
           <AppSidebar />
         </div>
 
-        {/* Mobile Navigation Drawer */}
+        {/* Mobile drawer */}
         {mobileNavOpen && (
           <div className="fixed inset-0 z-50 lg:hidden flex">
             <div
-              className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs"
+              className="fixed inset-0 bg-ink/50 backdrop-blur-[2px]"
               onClick={() => setMobileNavOpen(false)}
             />
-            <div className="relative w-64 bg-[#0B1220] z-10 h-full flex flex-col">
-              <div className="flex items-center justify-between p-4 border-b border-slate-800">
-                <span className="font-bold text-white text-sm">HEALHEALTH Menu</span>
+            <div className="relative w-[270px] bg-white z-10 h-full flex flex-col shadow-2xl">
+              <div className="flex items-center justify-between p-4 border-b border-hairline">
+                <span className="font-bold text-ink text-sm">HEALHEALTH Menu</span>
                 <button
                   type="button"
                   onClick={() => setMobileNavOpen(false)}
-                  className="p-1 text-slate-400 hover:text-white"
+                  className="p-1.5 text-slate-400 hover:text-ink rounded-lg hover:bg-slate-100"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -43,21 +51,20 @@ export const AppLayout: React.FC = () => {
           </div>
         )}
 
-        {/* Main Content Area */}
+        {/* Main column */}
         <div className="flex-1 flex flex-col min-w-0">
           <div className="flex items-center">
-            {/* Mobile hamburger toggle */}
-            <div className="lg:hidden p-3 bg-white border-b border-slate-200">
+            <div className="lg:hidden p-3 bg-white border-b border-hairline">
               <button
                 type="button"
                 onClick={() => setMobileNavOpen(true)}
-                className="p-2 rounded-lg text-slate-600 hover:bg-slate-100"
+                className="p-2 rounded-lg text-ink-soft hover:bg-slate-100"
                 aria-label="Open navigation"
               >
                 <Menu className="w-5 h-5" />
               </button>
             </div>
-            <div className="flex-1">
+            <div className="flex-1 min-w-0">
               <AppHeader />
             </div>
           </div>
@@ -66,53 +73,22 @@ export const AppLayout: React.FC = () => {
             <Outlet />
           </main>
 
-          {/* Mobile Bottom Quick Navigation bar */}
-          <div className="lg:hidden sticky bottom-0 z-20 bg-white/95 backdrop-blur-md border-t border-slate-200 py-2 px-4 flex items-center justify-around text-xs">
-            <NavLink
-              to="/dashboard"
-              className={({ isActive }) =>
-                `flex flex-col items-center gap-1 ${isActive ? 'text-teal-600 font-bold' : 'text-slate-500'}`
-              }
-            >
-              <LayoutDashboard className="w-5 h-5" />
-              <span>Home</span>
-            </NavLink>
-            <NavLink
-              to="/ai-navigator"
-              className={({ isActive }) =>
-                `flex flex-col items-center gap-1 ${isActive ? 'text-teal-600 font-bold' : 'text-slate-500'}`
-              }
-            >
-              <Bot className="w-5 h-5" />
-              <span>AI Pilot</span>
-            </NavLink>
-            <NavLink
-              to="/doctors"
-              className={({ isActive }) =>
-                `flex flex-col items-center gap-1 ${isActive ? 'text-teal-600 font-bold' : 'text-slate-500'}`
-              }
-            >
-              <Search className="w-5 h-5" />
-              <span>Doctors</span>
-            </NavLink>
-            <NavLink
-              to="/appointments"
-              className={({ isActive }) =>
-                `flex flex-col items-center gap-1 ${isActive ? 'text-teal-600 font-bold' : 'text-slate-500'}`
-              }
-            >
-              <Calendar className="w-5 h-5" />
-              <span>Visits</span>
-            </NavLink>
-            <NavLink
-              to="/health-records"
-              className={({ isActive }) =>
-                `flex flex-col items-center gap-1 ${isActive ? 'text-teal-600 font-bold' : 'text-slate-500'}`
-              }
-            >
-              <FolderHeart className="w-5 h-5" />
-              <span>Records</span>
-            </NavLink>
+          {/* Mobile bottom tabs */}
+          <div className="lg:hidden sticky bottom-0 z-20 bg-white border-t border-hairline py-2 px-4 flex items-center justify-around text-xs">
+            {mobileTabs.map(({ to, icon: Icon, label }) => (
+              <NavLink
+                key={to}
+                to={to}
+                className={({ isActive }) =>
+                  `flex flex-col items-center gap-1 rounded-xl px-2 py-1 transition ${
+                    isActive ? 'text-brand-600 font-bold' : 'text-slate-500'
+                  }`
+                }
+              >
+                <Icon className="w-5 h-5" />
+                <span>{label}</span>
+              </NavLink>
+            ))}
           </div>
         </div>
       </div>

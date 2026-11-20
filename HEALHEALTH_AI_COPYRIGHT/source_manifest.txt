@@ -1,0 +1,66 @@
+================================================================================
+HEALHEALTH AI – INDIAN COPYRIGHT REGISTRATION SOURCE CODE MANIFEST
+Statutory Compliance: Rule 70 of Copyright Rules, 2013 (First 10 & Last 10 Pages)
+================================================================================
+
+Generated Date: 2026-11-17 11:44:15
+Target Work: HEALHEALTH AI – AI-Powered Healthcare Management Application
+Primary Author: Vedant Pokale (GitHub: vedantpokale1-sys)
+Total Raw Code Pages in Selected Sequence: 106
+Included Source Pages: 20 (Pages 4 through 23 in PDF)
+
+PDF Page  Raw Page  Section             File Path                               
+--------------------------------------------------------------------------------
+4         1         First 10 Pages      server/server.ts                        
+5         2         First 10 Pages      server/server.ts                        
+6         3         First 10 Pages      src/main.tsx                            
+7         4         First 10 Pages      src/App.tsx                             
+8         5         First 10 Pages      src/App.tsx                             
+9         6         First 10 Pages      server/config/env.ts                    
+10        7         First 10 Pages      prisma/schema.prisma                    
+11        8         First 10 Pages      prisma/schema.prisma                    
+12        9         First 10 Pages      server/services/aiService.ts            
+13        10        First 10 Pages      server/services/aiService.ts            
+14        97        Last 10 Pages       src/components/healthcare/TelehealthRoomModal.tsx
+15        98        Last 10 Pages       src/components/healthcare/EmergencyBanner.tsx
+16        99        Last 10 Pages       src/pages/DoctorDiscoveryPage.tsx       
+17        100       Last 10 Pages       src/pages/DoctorDiscoveryPage.tsx       
+18        101       Last 10 Pages       src/pages/DoctorDiscoveryPage.tsx       
+19        102       Last 10 Pages       src/pages/DoctorDiscoveryPage.tsx       
+20        103       Last 10 Pages       src/pages/DoctorDiscoveryPage.tsx       
+21        104       Last 10 Pages       src/pages/HealthRecordsPage.tsx         
+22        105       Last 10 Pages       src/pages/HealthRecordsPage.tsx         
+23        106       Last 10 Pages       src/pages/HealthRecordsPage.tsx         
+
+================================================================================
+LIST OF ALL ORIGINAL REPOSITORY SOURCE FILES INCLUDED IN SEQUENCE:
+================================================================================
+• [Backend] server/server.ts - Backend Entry Point & Express HTTP Setup
+• [Frontend] src/main.tsx - Frontend React Client Entry Point
+• [Frontend] src/App.tsx - Main Application Router & Layout Component
+• [Backend] server/config/env.ts - Environment & Server Configuration
+• [Database] prisma/schema.prisma - Database Schema & Entity Models
+• [AI Module] server/services/aiService.ts - Clinical AI Navigation, Triage & Tool Calling
+• [AI Safety] server/services/safetyService.ts - Medical Safety Screening & Red-Flag Triage
+• [AI Module] server/services/retrievalService.ts - Evidence Retrieval & Medical Grounding Engine
+• [API] server/routes/aiRoutes.ts - AI Clinical Navigation API Endpoints
+• [Database] server/db/db.ts - In-Memory/SQLite Medical Database & Repository
+• [API] server/routes/appointmentRoutes.ts - Healthcare Appointment Coordination API
+• [API] server/routes/reportRoutes.ts - Medical Diagnostic Report Analysis API
+• [Auth / API] server/routes/authRoutes.ts - Authentication & Session Security API
+• [Frontend State] src/context/AppContext.tsx - Global Healthcare Application State Provider
+• [Frontend State] src/context/AuthContext.tsx - Authentication Context & Role Management
+• [Frontend Service] src/services/api.ts - Frontend API Client & HTTP Transport
+• [Types] src/types/index.ts - Core TypeScript Domain & Medical Data Types
+• [Frontend Page] src/pages/AiNavigatorPage.tsx - AI Symptom Navigator & Conversational UI
+• [Frontend Page] src/pages/ReportAnalyzerPage.tsx - Lab Diagnostic Report AI Analyzer UI
+• [Frontend Page] src/pages/DashboardPage.tsx - Patient Clinical Health Overview Dashboard
+• [Frontend 3D] src/components/3d/BodyExplorer3DCanvas.tsx - Interactive 3D Anatomical Organ Explorer
+• [Frontend 3D] src/components/3d/anatomicalModelBuilder.ts - Procedural 3D Organ & Anatomy Geometry Engine
+• [Frontend Geo] src/components/map/HealthcareMap.tsx - Geospatial Clinic & Hospital Discovery Map
+• [Frontend Page] src/pages/MedicationManagerPage.tsx - Prescription & Medication Schedule Tracker
+• [Frontend Page] src/pages/AppointmentBookingPage.tsx - Interactive Doctor Appointment Booking UI
+• [Frontend Modal] src/components/healthcare/TelehealthRoomModal.tsx - Encrypted Telehealth Consultation Room
+• [Frontend UI] src/components/healthcare/EmergencyBanner.tsx - Emergency Care & Critical Triage Banner
+• [Frontend Page] src/pages/DoctorDiscoveryPage.tsx - Specialist Doctor Discovery & Filter UI
+• [Frontend Page] src/pages/HealthRecordsPage.tsx - Electronic Health Records (EHR) Manager

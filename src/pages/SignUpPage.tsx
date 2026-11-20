@@ -43,11 +43,11 @@ export const SignUpPage: React.FC = () => {
     <div className="min-h-screen bg-[#F8FAFC] flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8 font-sans">
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
         <Link to="/" className="inline-flex items-center gap-2.5">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-teal-500 to-blue-600 flex items-center justify-center text-white shadow-md">
+          <div className="w-10 h-10 rounded-xl bg-ink flex items-center justify-center text-white">
             <Activity className="w-6 h-6" />
           </div>
           <span className="text-2xl font-extrabold text-slate-900 tracking-tight">
-            HEAL<span className="text-teal-600">HEALTH</span>
+            HEAL<span className="text-brand-600">HEALTH</span>
           </span>
         </Link>
         <h2 className="mt-4 text-2xl font-bold text-slate-900 tracking-tight">Create your patient account</h2>

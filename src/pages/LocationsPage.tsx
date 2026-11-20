@@ -188,27 +188,26 @@ export const LocationsPage: React.FC = () => {
   return (
     <div className="space-y-6 pb-12">
       {/* Top Header */}
-      <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-teal-950 p-6 md:p-8 rounded-3xl text-white shadow-xl relative overflow-hidden border border-slate-800">
-        <div className="absolute top-0 right-0 w-80 h-80 bg-teal-500/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="relative z-10 max-w-3xl space-y-3">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-500/20 border border-teal-500/30 text-teal-300 text-xs font-semibold backdrop-blur-sm">
-            <Compass className="w-3.5 h-3.5 text-teal-400" />
-            <span>Interactive Healthcare Geospatial Navigation</span>
+      <div className="bg-ivory border border-hairline p-6 md:p-8 rounded-xl">
+        <div className="max-w-3xl space-y-3">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-50 border border-brand-200 text-brand-800 text-xs font-semibold">
+            <Compass className="w-3.5 h-3.5 text-brand-600" />
+            <span>Hospitals, clinics & emergency care near you</span>
           </div>
 
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight">
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-ink">
             Find Healthcare Near You
           </h1>
 
-          <p className="text-slate-300 text-sm sm:text-base leading-relaxed">
-            Locate multi-speciality tertiary hospitals, accredited diagnostic clinics, and verified doctors with real-time operational status, emergency trauma response, and direct slot booking.
+          <p className="text-ink-soft text-sm sm:text-base leading-relaxed">
+            Locate multi-speciality hospitals, diagnostic clinics, and verified doctors with real-time operational status, emergency trauma response, and direct slot booking.
           </p>
 
           <div className="pt-2 flex flex-wrap items-center gap-3">
             <button
               onClick={handleLocateMe}
               disabled={isLocating}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold text-xs sm:text-sm rounded-xl transition shadow-md shadow-teal-500/20 active:scale-95 disabled:opacity-50"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white font-bold text-xs sm:text-sm rounded-lg transition active:scale-95 disabled:opacity-50"
             >
               <Navigation className={`w-4 h-4 ${isLocating ? 'animate-spin' : ''}`} />
               <span>{isLocating ? 'Locating...' : 'Use My Current Location'}</span>
@@ -219,9 +218,9 @@ export const LocationsPage: React.FC = () => {
                 setEmergencyOnly(true);
                 setSelectedType('hospital');
               }}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/40 font-semibold text-xs sm:text-sm rounded-xl transition"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-semibold text-xs sm:text-sm rounded-lg transition"
             >
-              <AlertCircle className="w-4 h-4 text-rose-400" />
+              <AlertCircle className="w-4 h-4 text-rose-600" />
               <span>Find 24/7 Emergency ER</span>
             </button>
           </div>
@@ -298,7 +297,7 @@ export const LocationsPage: React.FC = () => {
               onClick={() => setSelectedType('all')}
               className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
                 selectedType === 'all'
-                  ? 'bg-slate-900 text-white'
+                  ? 'bg-ink text-white'
                   : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
               }`}
             >
