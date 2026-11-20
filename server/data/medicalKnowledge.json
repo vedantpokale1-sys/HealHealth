@@ -79,17 +79,17 @@
     "id": "med_005",
     "topic": "Adult Fever & Acute Systemic Infections",
     "category": "General Medicine / Infectious Disease",
-    "symptoms": ["fever", "chills", "high temperature", "sweating", "body aches", "fatigue", "rigors"],
-    "summary": "Fever is an elevation of body temperature above the normal circadian range (>38.0°C or 100.4°F), typically regulated by pyrogenic cytokine release in response to infectious or inflammatory stimuli.",
+    "symptoms": ["fever", "chills", "high temperature", "sweating", "body aches", "fatigue", "rigors", "dengue", "cold", "flu", "viral fever", "runny nose"],
+    "summary": "Fever is an elevation of body temperature above the normal circadian range (>38.0°C or 100.4°F), typically regulated by pyrogenic cytokine release in response to infectious or inflammatory stimuli, common viral infections, seasonal cold, dengue, or malaria.",
     "clinicalGuidance": "Maintain oral fluid intake to prevent dehydration. Light clothing and comfortable room temperature help thermal regulation. Over-the-counter antipyretics (such as acetaminophen/paracetamol) can provide symptomatic comfort.",
     "redFlags": [
       "Fever > 103°F (39.4°C) unresponsive to antipyretics or lasting > 3 days",
-      "Fever accompanied by petechial or purpuric rash (non-blanching spots)",
+      "Fever accompanied by petechial or purpuric rash (non-blanching spots), bleeding gums, or sudden drop in platelets (Dengue red flags)",
       "Fever accompanied by acute confusion, lethargy, or extreme prostration",
       "Fever in immunocompromised patients, post-chemotherapy, or post-splenectomy",
       "Fever with localized severe abdominal tenderness, dysuria, or productive purulent cough"
     ],
-    "suggestedSpecialties": ["General Physician", "Internal Medicine"],
+    "suggestedSpecialties": ["Casualty", "General Physician", "Internal Medicine"],
     "sourceTitle": "MedlinePlus: Fever in Adults",
     "sourceUrl": "https://medlineplus.gov/fever.html",
     "reviewDate": "2024-05-12"

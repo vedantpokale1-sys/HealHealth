@@ -59,10 +59,14 @@ export const ReportAnalyzerPage: React.FC = () => {
 
       try {
         const { api } = await import('../services/api');
-        const analyzed = await api.analyzeReport({
+        const reportPromise = api.analyzeReport({
           reportText: `${newTitle}: Total Cholesterol 220 mg/dL (Ref < 200), LDL 148 mg/dL (Ref < 100), ALT/SGPT 58 U/L (Ref < 45). Fasting blood glucose 104 mg/dL.`,
           reportType: 'Pathology / Biochemistry',
         });
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('AI analysis timeout, using verified clinical fallback')), 4000)
+        );
+        const analyzed = (await Promise.race([reportPromise, timeoutPromise])) as any;
         if (analyzed?.summary) {
           aiSummary = analyzed.summary;
         }
@@ -71,50 +75,53 @@ export const ReportAnalyzerPage: React.FC = () => {
         }
       } catch (err) {
         console.warn('Backend report analysis fallback:', err);
+      } finally {
+        const created = addReport({
+          title: newTitle,
+          category: 'Pathology',
+          uploadDate: new Date().toISOString().split('T')[0],
+          fileSize: '1.8 MB',
+          fileName: 'lipid_metabolic_analyzed.pdf',
+          doctorName: 'Dr. Priya Kulkarni',
+          summary: aiSummary,
+          parameters: [
+            {
+              name: 'SGPT / ALT',
+              value: '58',
+              referenceRange: '7 - 45',
+              unit: 'U/L',
+              status: 'high',
+              explanation: 'Alanine aminotransferase is mildly elevated; often associated with metabolic hepatic stress or vigorous exercise.',
+            },
+            {
+              name: 'LDL Cholesterol',
+              value: '148',
+              referenceRange: '0 - 100',
+              unit: 'mg/dL',
+              status: 'high',
+              explanation: 'Low-density lipoprotein is moderately elevated above primary preventive targets.',
+            },
+            {
+              name: 'Total Bilirubin',
+              value: '0.9',
+              referenceRange: '0.2 - 1.2',
+              unit: 'mg/dL',
+              status: 'normal',
+              explanation: 'Normal hepatic clearance of red blood cell breakdown products.',
+            },
+          ],
+          questionsForDoctor: aiQuestions,
+          isDemo: true,
+        });
+
+        if (created?.id) {
+          setSelectedReportId(created.id);
+        }
+        setIsUploading(false);
+        setUploadProgress(0);
+        setProcessingStage('');
       }
-
-      addReport({
-        title: newTitle,
-        category: 'Pathology',
-        uploadDate: new Date().toISOString().split('T')[0],
-        fileSize: '1.8 MB',
-        fileName: 'lipid_metabolic_analyzed.pdf',
-        doctorName: 'Dr. Priya Kulkarni',
-        summary: aiSummary,
-        parameters: [
-          {
-            name: 'SGPT / ALT',
-            value: '58',
-            referenceRange: '7 - 45',
-            unit: 'U/L',
-            status: 'high',
-            explanation: 'Alanine aminotransferase is mildly elevated; often associated with metabolic hepatic stress or vigorous exercise.',
-          },
-          {
-            name: 'LDL Cholesterol',
-            value: '148',
-            referenceRange: '0 - 100',
-            unit: 'mg/dL',
-            status: 'high',
-            explanation: 'Low-density lipoprotein is moderately elevated above primary preventive targets.',
-          },
-          {
-            name: 'Total Bilirubin',
-            value: '0.9',
-            referenceRange: '0.2 - 1.2',
-            unit: 'mg/dL',
-            status: 'normal',
-            explanation: 'Normal hepatic clearance of red blood cell breakdown products.',
-          },
-        ],
-        questionsForDoctor: aiQuestions,
-        isDemo: true,
-      });
-
-      setIsUploading(false);
-      setUploadProgress(0);
-      setProcessingStage('');
-    }, 1600);
+    }, 1400);
   };
 
   return (

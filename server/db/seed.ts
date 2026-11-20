@@ -158,6 +158,25 @@ export function seedDatabase() {
         avatarUrl: 'https://images.unsplash.com/photo-1582750433449-648ed127bb54?auto=format&fit=crop&q=80&w=400',
         isDemo: 1,
       },
+      {
+        id: 'doc_7',
+        name: 'Dr. Rajesh Varma',
+        specialty: 'Casualty',
+        qualifications: 'MBBS, MD (General Medicine), DNB (Emergency & Acute Care)',
+        experienceYears: 12,
+        languages: ['English', 'Hindi', 'Marathi'],
+        clinic: 'City Care Casualty & Acute Fever Clinic',
+        location: 'Andheri West, Mumbai',
+        rating: 4.88,
+        reviewCount: 385,
+        consultationFee: 650,
+        consultationTypes: ['video', 'in-person'],
+        nextAvailable: 'Today, 02:30 PM',
+        about: 'Senior casualty & acute care physician specializing in rapid evaluation and treatment of acute viral fevers (Dengue, Malaria, Typhoid), seasonal flu, cold, infectious diseases, gastroenteritis, and general urgent medical conditions.',
+        availableSlots: ['02:30 PM', '03:15 PM', '04:00 PM', '05:30 PM', '07:00 PM'],
+        avatarUrl: 'https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?auto=format&fit=crop&q=80&w=400',
+        isDemo: 1,
+      },
     ];
 
     for (const doc of doctors) {

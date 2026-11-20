@@ -12,7 +12,7 @@ interface AppContextType {
   addAppointment: (appointment: Omit<Appointment, 'id'>) => string;
   cancelAppointment: (id: string) => void;
   rescheduleAppointment: (id: string, date: string, time: string) => void;
-  addReport: (report: Omit<MedicalReport, 'id'>) => void;
+  addReport: (report: Omit<MedicalReport, 'id'>) => MedicalReport;
   toggleMedicationDose: (medId: string, slotIdx: number) => void;
   addFamilyMember: (member: Omit<FamilyMember, 'id'>) => void;
   markNotificationRead: (id: string) => void;
@@ -102,7 +102,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     );
   };
 
-  const addReport = (report: Omit<MedicalReport, 'id'>) => {
+  const addReport = (report: Omit<MedicalReport, 'id'>): MedicalReport => {
     const newReport: MedicalReport = { ...report, id: `rep_${Date.now()}` };
     setReports(prev => [newReport, ...prev]);
     setNotifications(prev => [
@@ -117,6 +117,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       },
       ...prev,
     ]);
+    return newReport;
   };
 
   const toggleMedicationDose = (medId: string, slotIdx: number) => {

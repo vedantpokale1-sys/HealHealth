@@ -23,6 +23,7 @@ import {
   Flower2,
   Stethoscope,
   Video,
+  Thermometer,
 } from 'lucide-react';
 import { Navbar } from '../components/layout/Navbar';
 import { Footer } from '../components/layout/Footer';
@@ -39,6 +40,7 @@ const SPECIALTIES = [
   { name: 'Pediatrics', icon: Baby, desc: 'Newborn to teen health and development.' },
   { name: 'Ophthalmology', icon: Eye, desc: 'Vision, eye strain and eye examinations.' },
   { name: 'Gynecology', icon: Flower2, desc: 'Women\u2019s health, pregnancy and wellness.' },
+  { name: 'Casualty', icon: Thermometer, desc: 'Acute viral fevers, dengue, cold, and rapid triage.' },
   { name: 'General Medicine', icon: Stethoscope, desc: 'Everyday illness, check-ups and referrals.' },
 ];
 

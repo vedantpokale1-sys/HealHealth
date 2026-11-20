@@ -29,6 +29,7 @@ const SPECIALTY_MATCHERS: Record<string, (specialty: string) => boolean> = {
   Ophthalmology: (s) => /ophthal/i.test(s),
   Gynecology: (s) => /gynec|obstetric/i.test(s),
   'General Medicine': (s) => /general|family|physician/i.test(s),
+  Casualty: (s) => /casualty|acute|emergency|fever|general/i.test(s),
 };
 
 export const DoctorDiscoveryPage: React.FC = () => {
@@ -64,7 +65,8 @@ export const DoctorDiscoveryPage: React.FC = () => {
           doc.name.toLowerCase().includes(q) ||
           doc.specialty.toLowerCase().includes(q) ||
           doc.clinic.toLowerCase().includes(q) ||
-          doc.location.toLowerCase().includes(q);
+          doc.location.toLowerCase().includes(q) ||
+          (doc.about && doc.about.toLowerCase().includes(q));
 
         const matchesCategory = !categoryMatcher || categoryMatcher(doc.specialty);
         const matchesSpecialty = selectedSpecialty === 'All' || doc.specialty === selectedSpecialty;

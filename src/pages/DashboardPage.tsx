@@ -22,6 +22,7 @@ import {
   Brain,
   Bone,
   Baby,
+  Thermometer,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useApp } from '../context/AppContext';
@@ -63,10 +64,11 @@ export const DashboardPage: React.FC = () => {
   };
 
   const specialties = [
-    { name: 'Cardiology', icon: HeartPulse },
-    { name: 'Neurology', icon: Brain },
-    { name: 'Pediatrics', icon: Baby },
-    { name: 'Orthopedics', icon: Bone },
+    { name: 'Cardiology', icon: HeartPulse, desc: 'Heart & BP' },
+    { name: 'Neurology', icon: Brain, desc: 'Brain & Nerves' },
+    { name: 'Pediatrics', icon: Baby, desc: 'Child Health' },
+    { name: 'Orthopedics', icon: Bone, desc: 'Bones & Joints' },
+    { name: 'Casualty', icon: Thermometer, desc: 'Cold, Fever, Dengue' },
   ];
 
   const stats = [
@@ -168,19 +170,28 @@ export const DashboardPage: React.FC = () => {
               All specialties &rarr;
             </Link>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
             {specialties.map((sp) => {
               const Icon = sp.icon;
               return (
                 <Link
                   key={sp.name}
                   to={`/doctors?specialty=${encodeURIComponent(sp.name)}`}
-                  className="flex items-center gap-3 p-3.5 rounded-lg border border-hairline hover:border-brand-300 hover:bg-brand-50/40 transition group"
+                  className="flex flex-col sm:flex-row items-start sm:items-center gap-2.5 p-3 rounded-lg border border-hairline hover:border-brand-300 hover:bg-brand-50/40 transition group"
                 >
                   <div className="w-9 h-9 rounded-lg bg-brand-50 border border-brand-100 flex items-center justify-center text-brand-700 shrink-0">
                     <Icon className="w-4.5 h-4.5" />
                   </div>
-                  <span className="text-xs font-semibold text-ink group-hover:text-brand-800">{sp.name}</span>
+                  <div className="min-w-0">
+                    <span className="text-xs font-semibold text-ink group-hover:text-brand-800 block truncate">
+                      {sp.name}
+                    </span>
+                    {sp.desc && (
+                      <span className="text-[10px] text-slate-500 block truncate">
+                        {sp.desc}
+                      </span>
+                    )}
+                  </div>
                 </Link>
               );
             })}
