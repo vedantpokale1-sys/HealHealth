@@ -12,7 +12,8 @@
     "server": "tsx watch server/server.ts",
     "test:server": "tsx server/tests/api.test.ts",
     "seed": "tsx server/db/seed.ts",
-    "build": "tsc -b && vite build",
+    "build": "tsc -b && vite build && esbuild server/server.ts --bundle --platform=node --format=esm --outfile=api/index.js --external:node:sqlite",
+    "build:api": "esbuild server/server.ts --bundle --platform=node --format=esm --outfile=api/index.js --external:node:sqlite",
     "lint": "oxlint",
     "preview": "vite preview"
   },
@@ -47,6 +48,7 @@
     "@types/react-dom": "^19.2.7",
     "@vitejs/plugin-react": "^6.1.1",
     "concurrently": "^10.0.6",
+    "esbuild": "^0.28.2",
     "oxlint": "^1.81.0",
     "prisma": "^8.0.0-rc.22",
     "tsx": "^4.23.15",
