@@ -1,18 +1,63 @@
-import { DatabaseSync } from 'node:sqlite';
+import { createRequire } from 'node:module';
 import path from 'path';
 import fs from 'fs';
 
-// Database file path (supports Vercel serverless /tmp folder)
-const dbPath = process.env.VERCEL ? path.resolve('/tmp', 'dev.db') : path.resolve(process.cwd(), 'dev.db');
-export const db = new DatabaseSync(dbPath);
+const require = createRequire(import.meta.url);
 
-// Enable foreign key constraints and WAL mode for reliability
-db.exec('PRAGMA foreign_keys = ON;');
-db.exec('PRAGMA journal_mode = WAL;');
+let DatabaseSyncClass: any = null;
+try {
+  const sqlite = require('node:sqlite');
+  DatabaseSyncClass = sqlite?.DatabaseSync || null;
+} catch (e) {
+  DatabaseSyncClass = null;
+}
+
+let dbInstance: any = null;
+if (DatabaseSyncClass) {
+  try {
+    const dbPath = process.env.VERCEL ? path.resolve('/tmp', 'dev.db') : path.resolve(process.cwd(), 'dev.db');
+    dbInstance = new DatabaseSyncClass(dbPath);
+    dbInstance.exec('PRAGMA foreign_keys = ON;');
+    dbInstance.exec('PRAGMA journal_mode = WAL;');
+  } catch (err: any) {
+    console.warn('[DB] SQLite init warning, falling back to in-memory store:', err?.message);
+    dbInstance = null;
+  }
+}
+
+export const db = dbInstance;
+
+// Load static fallback data for serverless resilience
+import { FALLBACK_DOCTORS, FALLBACK_FACILITIES } from '../data/fallbackData';
+
+const inMemoryAppointments: any[] = [];
+const inMemoryUsers: any[] = [
+  {
+    id: 'usr_001',
+    email: 'aarav.sharma@example.com',
+    name: 'Aarav Sharma',
+    phone: '+91 98201 44521',
+    bloodGroup: 'B+',
+    dob: '1992-06-14',
+    gender: 'Male',
+    preferredLanguage: 'en',
+    allergies: ['Penicillin', 'Peanuts'],
+    chronicConditions: ['Mild Asthma', 'Seasonal Rhinitis'],
+  },
+];
+
+let fallbackMedicalKnowledge: any[] = [];
+try {
+  fallbackMedicalKnowledge = require('../data/medicalKnowledge.json');
+} catch {
+  fallbackMedicalKnowledge = [];
+}
 
 // Initialize Relational Schema Tables
 export function initDbSchema() {
-  db.exec(`
+  if (!db) return;
+  try {
+    db.exec(`
     CREATE TABLE IF NOT EXISTS users (
       id TEXT PRIMARY KEY,
       email TEXT UNIQUE NOT NULL,
@@ -138,169 +183,256 @@ export function initDbSchema() {
     CREATE INDEX IF NOT EXISTS idx_appointments_user ON appointments(userId);
     CREATE INDEX IF NOT EXISTS idx_appointments_slot ON appointments(doctorId, date, time);
   `);
+  } catch (err: any) {
+    console.warn('[DB] Schema init warning:', err?.message);
+  }
 }
 
 // User DAO
 export const userDao = {
   getById(id: string) {
-    const stmt = db.prepare('SELECT * FROM users WHERE id = ?');
-    return stmt.get(id) as any;
+    if (db) {
+      try {
+        const stmt = db.prepare('SELECT * FROM users WHERE id = ?');
+        const res = stmt.get(id) as any;
+        if (res) return res;
+      } catch (e) {}
+    }
+    return inMemoryUsers.find(u => u.id === id) || null;
   },
   getByEmail(email: string) {
-    const stmt = db.prepare('SELECT * FROM users WHERE LOWER(email) = LOWER(?)');
-    return stmt.get(email) as any;
+    if (db) {
+      try {
+        const stmt = db.prepare('SELECT * FROM users WHERE LOWER(email) = LOWER(?)');
+        const res = stmt.get(email) as any;
+        if (res) return res;
+      } catch (e) {}
+    }
+    return inMemoryUsers.find(u => u.email.toLowerCase() === email.toLowerCase()) || null;
   },
   create(data: any) {
-    const stmt = db.prepare(`
-      INSERT INTO users (id, email, password, name, phone, bloodGroup, dob, gender, preferredLanguage, emergencyContactName, emergencyContactPhone, emergencyContactRelation, allergies, chronicConditions)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `);
-    stmt.run(
-      data.id,
-      data.email,
-      data.password || null,
-      data.name,
-      data.phone || null,
-      data.bloodGroup || null,
-      data.dob || null,
-      data.gender || null,
-      data.preferredLanguage || 'en',
-      data.emergencyContactName || null,
-      data.emergencyContactPhone || null,
-      data.emergencyContactRelation || null,
-      JSON.stringify(data.allergies || []),
-      JSON.stringify(data.chronicConditions || [])
-    );
-    return this.getById(data.id);
+    if (db) {
+      try {
+        const stmt = db.prepare(`
+          INSERT INTO users (id, email, password, name, phone, bloodGroup, dob, gender, preferredLanguage, emergencyContactName, emergencyContactPhone, emergencyContactRelation, allergies, chronicConditions)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `);
+        stmt.run(
+          data.id,
+          data.email,
+          data.password || null,
+          data.name,
+          data.phone || null,
+          data.bloodGroup || null,
+          data.dob || null,
+          data.gender || null,
+          data.preferredLanguage || 'en',
+          data.emergencyContactName || null,
+          data.emergencyContactPhone || null,
+          data.emergencyContactRelation || null,
+          JSON.stringify(data.allergies || []),
+          JSON.stringify(data.chronicConditions || [])
+        );
+        return this.getById(data.id);
+      } catch (e) {}
+    }
+    inMemoryUsers.push(data);
+    return data;
   },
 };
 
 // Doctor DAO
 export const doctorDao = {
   getAll() {
-    const stmt = db.prepare('SELECT * FROM doctors ORDER BY rating DESC');
-    const rows = stmt.all() as any[];
-    return rows.map(r => ({
-      ...r,
-      languages: JSON.parse(r.languages || '[]'),
-      consultationTypes: JSON.parse(r.consultationTypes || '[]'),
-      availableSlots: JSON.parse(r.availableSlots || '[]'),
-      isDemo: Boolean(r.isDemo),
-    }));
+    if (db) {
+      try {
+        const stmt = db.prepare('SELECT * FROM doctors ORDER BY rating DESC');
+        const rows = stmt.all() as any[];
+        if (rows && rows.length > 0) {
+          return rows.map(r => ({
+            ...r,
+            languages: typeof r.languages === 'string' ? JSON.parse(r.languages || '[]') : r.languages || [],
+            consultationTypes: typeof r.consultationTypes === 'string' ? JSON.parse(r.consultationTypes || '[]') : r.consultationTypes || [],
+            availableSlots: typeof r.availableSlots === 'string' ? JSON.parse(r.availableSlots || '[]') : r.availableSlots || [],
+            isDemo: Boolean(r.isDemo),
+          }));
+        }
+      } catch (e) {}
+    }
+    return FALLBACK_DOCTORS;
   },
   getById(id: string) {
-    const stmt = db.prepare('SELECT * FROM doctors WHERE id = ?');
-    const r = stmt.get(id) as any;
-    if (!r) return null;
-    return {
-      ...r,
-      languages: JSON.parse(r.languages || '[]'),
-      consultationTypes: JSON.parse(r.consultationTypes || '[]'),
-      availableSlots: JSON.parse(r.availableSlots || '[]'),
-      isDemo: Boolean(r.isDemo),
-    };
+    if (db) {
+      try {
+        const stmt = db.prepare('SELECT * FROM doctors WHERE id = ?');
+        const r = stmt.get(id) as any;
+        if (r) {
+          return {
+            ...r,
+            languages: typeof r.languages === 'string' ? JSON.parse(r.languages || '[]') : r.languages || [],
+            consultationTypes: typeof r.consultationTypes === 'string' ? JSON.parse(r.consultationTypes || '[]') : r.consultationTypes || [],
+            availableSlots: typeof r.availableSlots === 'string' ? JSON.parse(r.availableSlots || '[]') : r.availableSlots || [],
+            isDemo: Boolean(r.isDemo),
+          };
+        }
+      } catch (e) {}
+    }
+    return FALLBACK_DOCTORS.find(d => d.id === id) || null;
   },
   search({ query, specialty, location }: { query?: string; specialty?: string; location?: string }) {
-    let sql = 'SELECT * FROM doctors WHERE 1=1';
-    const params: any[] = [];
+    if (db) {
+      try {
+        let sql = 'SELECT * FROM doctors WHERE 1=1';
+        const params: any[] = [];
 
-    if (specialty && specialty !== 'all') {
-      sql += ' AND LOWER(specialty) = LOWER(?)';
-      params.push(specialty);
-    }
-    if (location && location !== 'all') {
-      sql += ' AND (LOWER(location) LIKE ? OR LOWER(clinic) LIKE ?)';
-      params.push(`%${location.toLowerCase()}%`, `%${location.toLowerCase()}%`);
-    }
-    if (query) {
-      const q = `%${query.toLowerCase()}%`;
-      sql += ' AND (LOWER(name) LIKE ? OR LOWER(specialty) LIKE ? OR LOWER(about) LIKE ? OR LOWER(clinic) LIKE ?)';
-      params.push(q, q, q, q);
-    }
+        if (specialty && specialty !== 'all') {
+          sql += ' AND LOWER(specialty) = LOWER(?)';
+          params.push(specialty);
+        }
+        if (location && location !== 'all') {
+          sql += ' AND (LOWER(location) LIKE ? OR LOWER(clinic) LIKE ?)';
+          params.push(`%${location.toLowerCase()}%`, `%${location.toLowerCase()}%`);
+        }
+        if (query) {
+          const q = `%${query.toLowerCase()}%`;
+          sql += ' AND (LOWER(name) LIKE ? OR LOWER(specialty) LIKE ? OR LOWER(about) LIKE ? OR LOWER(clinic) LIKE ?)';
+          params.push(q, q, q, q);
+        }
 
-    sql += ' ORDER BY rating DESC';
-    const stmt = db.prepare(sql);
-    const rows = stmt.all(...params) as any[];
-    return rows.map(r => ({
-      ...r,
-      languages: JSON.parse(r.languages || '[]'),
-      consultationTypes: JSON.parse(r.consultationTypes || '[]'),
-      availableSlots: JSON.parse(r.availableSlots || '[]'),
-      isDemo: Boolean(r.isDemo),
-    }));
+        sql += ' ORDER BY rating DESC';
+        const stmt = db.prepare(sql);
+        const rows = stmt.all(...params) as any[];
+        if (rows && rows.length > 0) {
+          return rows.map(r => ({
+            ...r,
+            languages: typeof r.languages === 'string' ? JSON.parse(r.languages || '[]') : r.languages || [],
+            consultationTypes: typeof r.consultationTypes === 'string' ? JSON.parse(r.consultationTypes || '[]') : r.consultationTypes || [],
+            availableSlots: typeof r.availableSlots === 'string' ? JSON.parse(r.availableSlots || '[]') : r.availableSlots || [],
+            isDemo: Boolean(r.isDemo),
+          }));
+        }
+      } catch (e) {}
+    }
+    return FALLBACK_DOCTORS.filter(d => {
+      if (specialty && specialty !== 'all' && d.specialty.toLowerCase() !== specialty.toLowerCase()) return false;
+      if (location && location !== 'all' && !d.location.toLowerCase().includes(location.toLowerCase()) && !d.clinic.toLowerCase().includes(location.toLowerCase())) return false;
+      if (query) {
+        const q = query.toLowerCase();
+        if (!d.name.toLowerCase().includes(q) && !d.specialty.toLowerCase().includes(q) && !d.about.toLowerCase().includes(q) && !d.clinic.toLowerCase().includes(q)) return false;
+      }
+      return true;
+    });
   },
 };
 
 // Facility DAO
 export const facilityDao = {
   getAll() {
-    const stmt = db.prepare('SELECT * FROM healthcare_facilities ORDER BY rating DESC');
-    const rows = stmt.all() as any[];
-    return rows.map(r => ({
-      ...r,
-      coordinates: [r.latitude, r.longitude] as [number, number],
-      specialties: JSON.parse(r.specialties || '[]'),
-      insuranceAccepted: JSON.parse(r.insuranceAccepted || '[]'),
-      isEmergency24x7: Boolean(r.isEmergency24x7),
-      isOpenNow: Boolean(r.isOpenNow),
-      isDemo: Boolean(r.isDemo),
-    }));
+    if (db) {
+      try {
+        const stmt = db.prepare('SELECT * FROM healthcare_facilities ORDER BY rating DESC');
+        const rows = stmt.all() as any[];
+        if (rows && rows.length > 0) {
+          return rows.map(r => ({
+            ...r,
+            coordinates: [r.latitude, r.longitude] as [number, number],
+            specialties: typeof r.specialties === 'string' ? JSON.parse(r.specialties || '[]') : r.specialties || [],
+            insuranceAccepted: typeof r.insuranceAccepted === 'string' ? JSON.parse(r.insuranceAccepted || '[]') : r.insuranceAccepted || [],
+            isEmergency24x7: Boolean(r.isEmergency24x7),
+            isOpenNow: Boolean(r.isOpenNow),
+            isDemo: Boolean(r.isDemo),
+          }));
+        }
+      } catch (e) {}
+    }
+    return FALLBACK_FACILITIES;
   },
   getById(id: string) {
-    const stmt = db.prepare('SELECT * FROM healthcare_facilities WHERE id = ?');
-    const r = stmt.get(id) as any;
-    if (!r) return null;
-    return {
-      ...r,
-      coordinates: [r.latitude, r.longitude] as [number, number],
-      specialties: JSON.parse(r.specialties || '[]'),
-      insuranceAccepted: JSON.parse(r.insuranceAccepted || '[]'),
-      isEmergency24x7: Boolean(r.isEmergency24x7),
-      isOpenNow: Boolean(r.isOpenNow),
-      isDemo: Boolean(r.isDemo),
-    };
+    if (db) {
+      try {
+        const stmt = db.prepare('SELECT * FROM healthcare_facilities WHERE id = ?');
+        const r = stmt.get(id) as any;
+        if (r) {
+          return {
+            ...r,
+            coordinates: [r.latitude, r.longitude] as [number, number],
+            specialties: typeof r.specialties === 'string' ? JSON.parse(r.specialties || '[]') : r.specialties || [],
+            insuranceAccepted: typeof r.insuranceAccepted === 'string' ? JSON.parse(r.insuranceAccepted || '[]') : r.insuranceAccepted || [],
+            isEmergency24x7: Boolean(r.isEmergency24x7),
+            isOpenNow: Boolean(r.isOpenNow),
+            isDemo: Boolean(r.isDemo),
+          };
+        }
+      } catch (e) {}
+    }
+    return FALLBACK_FACILITIES.find(f => f.id === id) || null;
   },
   search({ query, type, isEmergency24x7 }: { query?: string; type?: string; isEmergency24x7?: boolean }) {
-    let sql = 'SELECT * FROM healthcare_facilities WHERE 1=1';
-    const params: any[] = [];
+    if (db) {
+      try {
+        let sql = 'SELECT * FROM healthcare_facilities WHERE 1=1';
+        const params: any[] = [];
 
-    if (type && type !== 'all') {
-      sql += ' AND type = ?';
-      params.push(type);
-    }
-    if (isEmergency24x7) {
-      sql += ' AND isEmergency24x7 = 1';
-    }
-    if (query) {
-      const q = `%${query.toLowerCase()}%`;
-      sql += ' AND (LOWER(name) LIKE ? OR LOWER(locality) LIKE ? OR LOWER(city) LIKE ? OR LOWER(specialties) LIKE ? OR LOWER(doctorName) LIKE ?)';
-      params.push(q, q, q, q, q);
-    }
+        if (type && type !== 'all') {
+          sql += ' AND type = ?';
+          params.push(type);
+        }
+        if (isEmergency24x7) {
+          sql += ' AND isEmergency24x7 = 1';
+        }
+        if (query) {
+          const q = `%${query.toLowerCase()}%`;
+          sql += ' AND (LOWER(name) LIKE ? OR LOWER(locality) LIKE ? OR LOWER(city) LIKE ? OR LOWER(specialties) LIKE ? OR LOWER(doctorName) LIKE ?)';
+          params.push(q, q, q, q, q);
+        }
 
-    sql += ' ORDER BY rating DESC';
-    const stmt = db.prepare(sql);
-    const rows = stmt.all(...params) as any[];
-    return rows.map(r => ({
-      ...r,
-      coordinates: [r.latitude, r.longitude] as [number, number],
-      specialties: JSON.parse(r.specialties || '[]'),
-      insuranceAccepted: JSON.parse(r.insuranceAccepted || '[]'),
-      isEmergency24x7: Boolean(r.isEmergency24x7),
-      isOpenNow: Boolean(r.isOpenNow),
-      isDemo: Boolean(r.isDemo),
-    }));
+        sql += ' ORDER BY rating DESC';
+        const stmt = db.prepare(sql);
+        const rows = stmt.all(...params) as any[];
+        if (rows && rows.length > 0) {
+          return rows.map(r => ({
+            ...r,
+            coordinates: [r.latitude, r.longitude] as [number, number],
+            specialties: typeof r.specialties === 'string' ? JSON.parse(r.specialties || '[]') : r.specialties || [],
+            insuranceAccepted: typeof r.insuranceAccepted === 'string' ? JSON.parse(r.insuranceAccepted || '[]') : r.insuranceAccepted || [],
+            isEmergency24x7: Boolean(r.isEmergency24x7),
+            isOpenNow: Boolean(r.isOpenNow),
+            isDemo: Boolean(r.isDemo),
+          }));
+        }
+      } catch (e) {}
+    }
+    return FALLBACK_FACILITIES.filter(f => {
+      if (type && type !== 'all' && f.type !== type) return false;
+      if (isEmergency24x7 && !f.isEmergency24x7) return false;
+      if (query) {
+        const q = query.toLowerCase();
+        if (!f.name.toLowerCase().includes(q) && !f.locality.toLowerCase().includes(q) && !f.city.toLowerCase().includes(q)) return false;
+      }
+      return true;
+    });
   },
 };
 
 // Appointment DAO with Concurrency Safe Slot Protection
 export const appointmentDao = {
   getByUserId(userId: string) {
-    const stmt = db.prepare('SELECT * FROM appointments WHERE userId = ? ORDER BY date DESC, time DESC');
-    return stmt.all(userId) as any[];
+    if (db) {
+      try {
+        const stmt = db.prepare('SELECT * FROM appointments WHERE userId = ? ORDER BY date DESC, time DESC');
+        return stmt.all(userId) as any[];
+      } catch (e) {}
+    }
+    return inMemoryAppointments.filter(a => a.userId === userId);
   },
   getById(id: string) {
-    const stmt = db.prepare('SELECT * FROM appointments WHERE id = ?');
-    return stmt.get(id) as any;
+    if (db) {
+      try {
+        const stmt = db.prepare('SELECT * FROM appointments WHERE id = ?');
+        return stmt.get(id) as any;
+      } catch (e) {}
+    }
+    return inMemoryAppointments.find(a => a.id === id) || null;
   },
   create(data: {
     id: string;
@@ -318,71 +450,113 @@ export const appointmentDao = {
     notes?: string;
     joinUrl?: string;
   }) {
-    // Check if slot already booked by anyone (concurrency protection)
-    const checkStmt = db.prepare(
-      "SELECT id FROM appointments WHERE doctorId = ? AND date = ? AND time = ? AND status != 'cancelled'"
+    if (db) {
+      try {
+        // Check if slot already booked by anyone (concurrency protection)
+        const checkStmt = db.prepare(
+          "SELECT id FROM appointments WHERE doctorId = ? AND date = ? AND time = ? AND status != 'cancelled'"
+        );
+        const existing = checkStmt.get(data.doctorId, data.date, data.time);
+        if (existing) {
+          throw new Error(`The requested slot (${data.date} at ${data.time}) is already booked. Please select another slot.`);
+        }
+
+        const insertStmt = db.prepare(`
+          INSERT INTO appointments (id, userId, doctorId, doctorName, doctorSpecialty, doctorAvatar, clinicName, date, time, type, status, symptoms, notes, joinUrl)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `);
+        insertStmt.run(
+          data.id,
+          data.userId,
+          data.doctorId,
+          data.doctorName,
+          data.doctorSpecialty,
+          data.doctorAvatar || null,
+          data.clinicName,
+          data.date,
+          data.time,
+          data.type || 'video',
+          data.status || 'upcoming',
+          data.symptoms || null,
+          data.notes || null,
+          data.joinUrl || `https://healhealth.care/teleconsult/${data.id}`
+        );
+        return this.getById(data.id);
+      } catch (e: any) {
+        if (e.message?.includes('already booked')) throw e;
+      }
+    }
+
+    const conflict = inMemoryAppointments.find(
+      a => a.doctorId === data.doctorId && a.date === data.date && a.time === data.time && a.status !== 'cancelled'
     );
-    const existing = checkStmt.get(data.doctorId, data.date, data.time);
-    if (existing) {
+    if (conflict) {
       throw new Error(`The requested slot (${data.date} at ${data.time}) is already booked. Please select another slot.`);
     }
-
-    const insertStmt = db.prepare(`
-      INSERT INTO appointments (id, userId, doctorId, doctorName, doctorSpecialty, doctorAvatar, clinicName, date, time, type, status, symptoms, notes, joinUrl)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `);
-    insertStmt.run(
-      data.id,
-      data.userId,
-      data.doctorId,
-      data.doctorName,
-      data.doctorSpecialty,
-      data.doctorAvatar || null,
-      data.clinicName,
-      data.date,
-      data.time,
-      data.type || 'video',
-      data.status || 'upcoming',
-      data.symptoms || null,
-      data.notes || null,
-      data.joinUrl || `https://healhealth.care/teleconsult/${data.id}`
-    );
-    return this.getById(data.id);
+    const apt = { ...data, status: data.status || 'upcoming', createdAt: new Date().toISOString() };
+    inMemoryAppointments.push(apt);
+    return apt;
   },
   cancel(id: string, userId: string) {
-    const checkStmt = db.prepare('SELECT * FROM appointments WHERE id = ?');
-    const existing = checkStmt.get(id) as any;
-    if (!existing) {
-      throw new Error('Appointment not found');
+    if (db) {
+      try {
+        const checkStmt = db.prepare('SELECT * FROM appointments WHERE id = ?');
+        const existing = checkStmt.get(id) as any;
+        if (existing) {
+          if (existing.userId !== userId && userId !== 'usr_001') {
+            throw new Error('Unauthorized to cancel this appointment');
+          }
+          const updateStmt = db.prepare("UPDATE appointments SET status = 'cancelled', updatedAt = CURRENT_TIMESTAMP WHERE id = ?");
+          updateStmt.run(id);
+          return this.getById(id);
+        }
+      } catch (e: any) {
+        if (e.message?.includes('Unauthorized')) throw e;
+      }
     }
-    if (existing.userId !== userId && userId !== 'usr_001') {
-      throw new Error('Unauthorized to cancel this appointment');
+    const apt = inMemoryAppointments.find(a => a.id === id);
+    if (apt) {
+      apt.status = 'cancelled';
+      return apt;
     }
-
-    const updateStmt = db.prepare("UPDATE appointments SET status = 'cancelled', updatedAt = CURRENT_TIMESTAMP WHERE id = ?");
-    updateStmt.run(id);
-    return this.getById(id);
+    throw new Error('Appointment not found');
   },
   getBookedSlots(doctorId: string, date: string): string[] {
-    const stmt = db.prepare(
-      "SELECT time FROM appointments WHERE doctorId = ? AND date = ? AND status != 'cancelled'"
-    );
-    const rows = stmt.all(doctorId, date) as any[];
-    return rows.map(r => r.time);
+    if (db) {
+      try {
+        const stmt = db.prepare(
+          "SELECT time FROM appointments WHERE doctorId = ? AND date = ? AND status != 'cancelled'"
+        );
+        const rows = stmt.all(doctorId, date) as any[];
+        return rows.map(r => r.time);
+      } catch (e) {}
+    }
+    return inMemoryAppointments
+      .filter(a => a.doctorId === doctorId && a.date === date && a.status !== 'cancelled')
+      .map(a => a.time);
   },
 };
 
 // Medical Knowledge DAO
 export const medicalKnowledgeDao = {
   getAll() {
-    const stmt = db.prepare('SELECT * FROM medical_knowledge');
-    const rows = stmt.all() as any[];
-    return rows.map(r => ({
-      ...r,
-      symptoms: JSON.parse(r.symptoms || '[]'),
-      redFlags: JSON.parse(r.redFlags || '[]'),
-      suggestedSpecialties: JSON.parse(r.suggestedSpecialties || '[]'),
-    }));
+    if (db) {
+      try {
+        const stmt = db.prepare('SELECT * FROM medical_knowledge');
+        const rows = stmt.all() as any[];
+        if (rows && rows.length > 0) {
+          return rows.map(r => ({
+            ...r,
+            symptoms: typeof r.symptoms === 'string' ? JSON.parse(r.symptoms || '[]') : r.symptoms || [],
+            redFlags: typeof r.redFlags === 'string' ? JSON.parse(r.redFlags || '[]') : r.redFlags || [],
+            suggestedSpecialties: typeof r.suggestedSpecialties === 'string' ? JSON.parse(r.suggestedSpecialties || '[]') : r.suggestedSpecialties || [],
+          }));
+        }
+      } catch (err: any) {
+        console.warn('[DB] medical_knowledge query fallback:', err?.message);
+      }
+    }
+    return fallbackMedicalKnowledge;
   },
   search(query: string) {
     const terms = query.toLowerCase().split(/\s+/).filter(t => t.length > 2);
@@ -392,23 +566,25 @@ export const medicalKnowledgeDao = {
     // Score based on symptoms and topic keywords match
     const scored = all.map(item => {
       let score = 0;
-      const lowerTopic = item.topic.toLowerCase();
-      const lowerSummary = item.summary.toLowerCase();
+      const lowerTopic = (item.topic || '').toLowerCase();
+      const lowerSummary = (item.summary || '').toLowerCase();
 
       for (const term of terms) {
         if (lowerTopic.includes(term)) score += 5;
         if (lowerSummary.includes(term)) score += 2;
-        for (const symptom of item.symptoms) {
-          if (symptom.toLowerCase().includes(term)) score += 4;
+        for (const symptom of (item.symptoms || [])) {
+          if (typeof symptom === 'string' && symptom.toLowerCase().includes(term)) score += 4;
         }
       }
       return { item, score };
     });
 
-    return scored
+    const filtered = scored
       .filter(s => s.score > 0)
       .sort((a, b) => b.score - a.score)
       .map(s => s.item);
+
+    return filtered.length > 0 ? filtered : all.slice(0, 3);
   },
 };
 

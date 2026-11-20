@@ -13,8 +13,12 @@ import { authRouter } from './routes/authRoutes';
 
 const app = express();
 
-// Initialize database schema and seeds
-seedDatabase();
+// Initialize database schema and seeds safely
+try {
+  seedDatabase();
+} catch (err: any) {
+  console.warn('[DB Init] Database seed skipped or in-memory fallback active:', err?.message);
+}
 
 // Security and CORS
 app.use(
@@ -36,14 +40,14 @@ app.use((req, res, next) => {
   next();
 });
 
-// Mount Routes under /api/v1
-app.use('/api/v1', healthRouter);
-app.use('/api/v1/ai', aiRouter);
-app.use('/api/v1/doctors', doctorRouter);
-app.use('/api/v1/facilities', facilityRouter);
-app.use('/api/v1/appointments', appointmentRouter);
-app.use('/api/v1/reports', reportRouter);
-app.use('/api/v1/auth', authRouter);
+// Mount Routes under /api/v1, /v1, and /api for flexible serverless rewrites
+app.use(['/api/v1', '/v1', '/api'], healthRouter);
+app.use(['/api/v1/ai', '/v1/ai', '/api/ai'], aiRouter);
+app.use(['/api/v1/doctors', '/v1/doctors', '/api/doctors'], doctorRouter);
+app.use(['/api/v1/facilities', '/v1/facilities', '/api/facilities'], facilityRouter);
+app.use(['/api/v1/appointments', '/v1/appointments', '/api/appointments'], appointmentRouter);
+app.use(['/api/v1/reports', '/v1/reports', '/api/reports'], reportRouter);
+app.use(['/api/v1/auth', '/v1/auth', '/api/auth'], authRouter);
 
 // 404 Handler
 app.use((req, res) => {

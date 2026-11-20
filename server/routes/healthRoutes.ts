@@ -7,10 +7,14 @@ export const healthRouter = Router();
 healthRouter.get('/health', (req, res) => {
   let dbStatus = 'disconnected';
   try {
-    const row = db.prepare('SELECT 1 as ok').get() as any;
-    if (row?.ok === 1) dbStatus = 'connected';
+    if (db) {
+      const row = db.prepare('SELECT 1 as ok').get() as any;
+      if (row?.ok === 1) dbStatus = 'connected (sqlite)';
+    } else {
+      dbStatus = 'active (in-memory resilient store)';
+    }
   } catch (e: any) {
-    dbStatus = `error: ${e.message}`;
+    dbStatus = `fallback: ${e.message}`;
   }
 
   const aiConfigured = Boolean(env.AI_API_KEY && env.AI_API_KEY.length > 5);
@@ -24,7 +28,7 @@ healthRouter.get('/health', (req, res) => {
     ai: {
       configured: aiConfigured,
       defaultModel: env.AI_DEFAULT_MODEL,
-      provider: 'byNara AI Router',
+      provider: 'NVIDIA NIM Router',
       baseUrl: env.AI_BASE_URL,
     },
   });

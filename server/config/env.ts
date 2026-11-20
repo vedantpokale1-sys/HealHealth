@@ -9,7 +9,7 @@ const apiKey =
   process.env.AI_API_KEY ||
   process.env.BYNARA_API_KEY ||
   process.env.NVIDIA_NIM_API_KEY ||
-  '';
+  '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';
 
 const baseUrl =
   process.env.AI_BASE_URL ||

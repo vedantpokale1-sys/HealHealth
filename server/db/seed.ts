@@ -3,6 +3,10 @@ import fs from 'fs';
 import path from 'path';
 
 export function seedDatabase() {
+  if (!db) {
+    console.log('[DB] Running with in-memory resilient storage.');
+    return;
+  }
   initDbSchema();
 
   // 1. Seed Demo User
