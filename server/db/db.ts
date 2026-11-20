@@ -1,12 +1,12 @@
-import { createRequire } from 'node:module';
+import { createRequire as makeRequire } from 'node:module';
 import path from 'path';
 import fs from 'fs';
 
-const require = createRequire(import.meta.url);
+const reqLoader = makeRequire(import.meta.url);
 
 let DatabaseSyncClass: any = null;
 try {
-  const sqlite = require('node:sqlite');
+  const sqlite = reqLoader('node:sqlite');
   DatabaseSyncClass = sqlite?.DatabaseSync || null;
 } catch (e) {
   DatabaseSyncClass = null;
@@ -48,7 +48,7 @@ const inMemoryUsers: any[] = [
 
 let fallbackMedicalKnowledge: any[] = [];
 try {
-  fallbackMedicalKnowledge = require('../data/medicalKnowledge.json');
+  fallbackMedicalKnowledge = reqLoader('../data/medicalKnowledge.json');
 } catch {
   fallbackMedicalKnowledge = [];
 }

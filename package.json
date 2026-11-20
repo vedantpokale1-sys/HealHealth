@@ -12,8 +12,8 @@
     "server": "tsx watch server/server.ts",
     "test:server": "tsx server/tests/api.test.ts",
     "seed": "tsx server/db/seed.ts",
-    "build": "tsc -b && vite build && esbuild server/server.ts --bundle --platform=node --format=esm --outfile=api/index.js --external:node:sqlite",
-    "build:api": "esbuild server/server.ts --bundle --platform=node --format=esm --outfile=api/index.js --external:node:sqlite",
+    "build": "tsc -b && vite build && esbuild server/server.ts --bundle --platform=node --format=esm --banner:js=\"import { createRequire } from 'node:module'; const require = createRequire(import.meta.url);\" --external:node:sqlite --outfile=api/index.js",
+    "build:api": "esbuild server/server.ts --bundle --platform=node --format=esm --banner:js=\"import { createRequire } from 'node:module'; const require = createRequire(import.meta.url);\" --external:node:sqlite --outfile=api/index.js",
     "lint": "oxlint",
     "preview": "vite preview"
   },
