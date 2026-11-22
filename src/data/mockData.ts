@@ -10,7 +10,7 @@ export const INITIAL_USER = {
   gender: 'Male',
   preferredLanguage: 'en' as const,
   emergencyContact: {
-    name: 'Pooja Sharma',
+    name: 'Pooja Pokale',
     relationship: 'Spouse',
     phone: '+91 98201 44522',
   },
@@ -403,7 +403,7 @@ export const MOCK_MEDICATIONS: Medication[] = [
 export const MOCK_FAMILY_MEMBERS: FamilyMember[] = [
   {
     id: 'fam_1',
-    name: 'Pooja Sharma',
+    name: 'Pooja Pokale',
     relationship: 'Spouse',
     age: 32,
     gender: 'Female',
@@ -414,7 +414,7 @@ export const MOCK_FAMILY_MEMBERS: FamilyMember[] = [
   },
   {
     id: 'fam_2',
-    name: 'Vihaan Sharma',
+    name: 'Vihaan Pokale',
     relationship: 'Son',
     age: 5,
     gender: 'Male',
@@ -425,7 +425,7 @@ export const MOCK_FAMILY_MEMBERS: FamilyMember[] = [
   },
   {
     id: 'fam_3',
-    name: 'Kamla Sharma',
+    name: 'Kamla Pokale',
     relationship: 'Mother',
     age: 63,
     gender: 'Female',

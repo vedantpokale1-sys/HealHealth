@@ -20,7 +20,7 @@ export const AuthRequiredModal: React.FC<AuthRequiredModalProps> = ({
   actionDescription = 'Please sign in or create an account to view doctor profiles, book consultations, and access clinic locations.',
 }) => {
   const navigate = useNavigate();
-  const { quickDemoLogin } = useAuth();
+  const { isAuthenticated, user, quickDemoLogin } = useAuth();
 
   if (!isOpen) return null;
 
@@ -72,29 +72,55 @@ export const AuthRequiredModal: React.FC<AuthRequiredModalProps> = ({
           </p>
         </div>
 
-        {/* 1-Click Sandbox Fast Access */}
-        <div className="p-3.5 bg-gradient-to-r from-teal-50 to-sky-50 border border-teal-200 rounded-xl space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-teal-900 flex items-center gap-1.5">
-              <Zap className="w-3.5 h-3.5 text-teal-600 fill-teal-600" /> Instant Demo Sign-In
-            </span>
-            <span className="text-[10px] uppercase font-bold text-teal-700 bg-teal-100 px-2 py-0.5 rounded-full">
-              Recommended
-            </span>
+        {/* Active Session or 1-Click Sandbox Sign-In */}
+        {isAuthenticated ? (
+          <div className="p-3.5 bg-brand-50/80 border border-brand-200 rounded-xl space-y-2.5">
+            <div className="flex items-center gap-2.5">
+              <span className="w-8 h-8 rounded-full bg-brand-600 text-white flex items-center justify-center font-bold text-xs shrink-0">
+                {user?.name?.[0] || 'V'}
+              </span>
+              <div className="min-w-0">
+                <p className="text-xs font-bold text-ink truncate">Signed in as {user?.name || 'Vedant Pokale'}</p>
+                <p className="text-[11px] text-slate-500 truncate">{user?.email || 'vedant.pokale@example.com'}</p>
+              </div>
+            </div>
+            <Button
+              type="button"
+              variant="teal"
+              size="sm"
+              onClick={() => {
+                onClose();
+                navigate(targetUrl);
+              }}
+              className="w-full text-xs font-bold"
+            >
+              Continue to Destination as {user?.name?.split(' ')[0] || 'Vedant'} &rarr;
+            </Button>
           </div>
-          <p className="text-[11px] text-teal-800 leading-snug">
-            Instantly loads patient portal (Vedant Pokale) with telemetry and proceeds to your requested action.
-          </p>
-          <Button
-            type="button"
-            variant="teal"
-            size="sm"
-            onClick={handleQuickDemo}
-            className="w-full text-xs font-bold"
-          >
-            1-Click Sign In & Continue &rarr;
-          </Button>
-        </div>
+        ) : (
+          <div className="p-3.5 bg-gradient-to-r from-teal-50 to-sky-50 border border-teal-200 rounded-xl space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-teal-900 flex items-center gap-1.5">
+                <Zap className="w-3.5 h-3.5 text-teal-600 fill-teal-600" /> Instant Demo Sign-In
+              </span>
+              <span className="text-[10px] uppercase font-bold text-teal-700 bg-teal-100 px-2 py-0.5 rounded-full">
+                Recommended
+              </span>
+            </div>
+            <p className="text-[11px] text-teal-800 leading-snug">
+              Instantly loads patient portal (Vedant Pokale) with telemetry and proceeds to your requested action.
+            </p>
+            <Button
+              type="button"
+              variant="teal"
+              size="sm"
+              onClick={handleQuickDemo}
+              className="w-full text-xs font-bold"
+            >
+              1-Click Sign In as Vedant Pokale & Continue &rarr;
+            </Button>
+          </div>
+        )}
 
         {/* Traditional Auth Options */}
         <div className="space-y-2 pt-1">
@@ -105,7 +131,7 @@ export const AuthRequiredModal: React.FC<AuthRequiredModalProps> = ({
             className="w-full text-xs font-semibold"
             leftIcon={<LogIn className="w-4 h-4 text-brand-600" />}
           >
-            Sign In with Email & Password
+            {isAuthenticated ? 'Sign In with a Different Account' : 'Sign In with Email & Password'}
           </Button>
 
           <Button

@@ -18,6 +18,13 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
+    // If stale Aarav data exists in localStorage, clear it so fresh login is requested
+    const saved = localStorage.getItem('healhealth_user');
+    if (saved && (saved.includes('Aarav') || saved.includes('aarav') || saved.includes('Sharma'))) {
+      localStorage.removeItem('healhealth_auth');
+      localStorage.removeItem('healhealth_user');
+      return false;
+    }
     return localStorage.getItem('healhealth_auth') === 'true';
   });
 
@@ -27,7 +34,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const saved = localStorage.getItem('healhealth_user');
     if (!saved) return INITIAL_USER;
     try {
-      return JSON.parse(saved);
+      const parsed = JSON.parse(saved);
+      if (!parsed?.name || parsed.name.includes('Aarav') || parsed.name.includes('Sharma')) {
+        localStorage.setItem('healhealth_user', JSON.stringify(INITIAL_USER));
+        return INITIAL_USER;
+      }
+      return parsed;
     } catch {
       return INITIAL_USER;
     }
@@ -50,18 +62,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = async (email: string, _pass: string) => {
     setIsAuthenticated(true);
-    const existing = localStorage.getItem('healhealth_user');
     let u: UserProfile;
-    if (existing) {
-      try {
-        u = { ...JSON.parse(existing), email };
-      } catch {
-        u = { ...INITIAL_USER, email };
-      }
+    if (email === 'vedant.pokale@example.com' || email.includes('vedant')) {
+      u = INITIAL_USER;
     } else {
-      const displayName =
-        email.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()) || INITIAL_USER.name;
-      u = { ...INITIAL_USER, email, name: displayName };
+      const existing = localStorage.getItem('healhealth_user');
+      if (existing) {
+        try {
+          const parsed = JSON.parse(existing);
+          if (parsed?.name?.includes('Aarav')) {
+            u = { ...INITIAL_USER, email };
+          } else {
+            u = { ...parsed, email };
+          }
+        } catch {
+          u = { ...INITIAL_USER, email };
+        }
+      } else {
+        const displayName =
+          email.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()) || INITIAL_USER.name;
+        u = { ...INITIAL_USER, email, name: displayName };
+      }
     }
     setUser(u);
     localStorage.setItem('healhealth_auth', 'true');

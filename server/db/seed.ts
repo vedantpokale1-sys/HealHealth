@@ -26,7 +26,7 @@ export function seedDatabase() {
       '1992-06-14',
       'Male',
       'en',
-      'Pooja Sharma',
+      'Pooja Pokale',
       '+91 98201 44522',
       'Spouse',
       JSON.stringify(['Penicillin', 'Peanuts']),

@@ -28,7 +28,7 @@ export const OnboardingPage: React.FC = () => {
   const [bloodGroup, setBloodGroup] = useState(user?.bloodGroup || 'B+');
   const [dob, setDob] = useState(user?.dob || '1992-06-14');
   const [gender, setGender] = useState(user?.gender || 'Male');
-  const [emergencyName, setEmergencyName] = useState(user?.emergencyContact?.name || 'Pooja Sharma');
+  const [emergencyName, setEmergencyName] = useState(user?.emergencyContact?.name || 'Pooja Pokale');
   const [emergencyPhone, setEmergencyPhone] = useState(user?.emergencyContact?.phone || '+91 98201 44522');
   const [allergies, setAllergies] = useState<string[]>(user?.allergies || ['Penicillin', 'Peanuts']);
   const [newAllergy, setNewAllergy] = useState('');

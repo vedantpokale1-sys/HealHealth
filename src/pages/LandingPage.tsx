@@ -70,18 +70,15 @@ export const LandingPage: React.FC = () => {
     actionTitle?: string,
     actionDescription?: string
   ) => {
-    if (isAuthenticated) {
-      navigate(targetUrl);
-    } else {
-      setAuthModal({
-        isOpen: true,
-        targetUrl,
-        actionTitle: actionTitle || 'Sign in to access HEALHEALTH',
-        actionDescription:
-          actionDescription ||
-          'Please sign in or create an account to view doctor profiles, book consultations, and access clinic locations.',
-      });
-    }
+    // Always prompt for login / authentication confirmation from the intro page:
+    setAuthModal({
+      isOpen: true,
+      targetUrl,
+      actionTitle: actionTitle || 'Sign in to access HEALHEALTH',
+      actionDescription:
+        actionDescription ||
+        'Please sign in or create an account to view doctor profiles, book consultations, and access clinic locations.',
+    });
   };
 
   const handleSearch = (e: React.FormEvent) => {

@@ -156,7 +156,7 @@ export const FamilyHealthPage: React.FC = () => {
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="e.g. Maya Sharma"
+              placeholder="e.g. Maya Pokale"
               required
               className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs"
             />

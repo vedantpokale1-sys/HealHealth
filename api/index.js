@@ -45121,7 +45121,7 @@ function seedDatabase() {
       "1992-06-14",
       "Male",
       "en",
-      "Pooja Sharma",
+      "Pooja Pokale",
       "+91 98201 44522",
       "Spouse",
       JSON.stringify(["Penicillin", "Peanuts"]),
@@ -46305,7 +46305,7 @@ authRouter.post("/login", (req, res) => {
       allergies: typeof user.allergies === "string" ? JSON.parse(user.allergies) : user.allergies || ["Penicillin", "Peanuts"],
       chronicConditions: typeof user.chronicConditions === "string" ? JSON.parse(user.chronicConditions) : user.chronicConditions || ["Mild Asthma", "Seasonal Rhinitis"],
       emergencyContact: {
-        name: user.emergencyContactName || "Pooja Sharma",
+        name: user.emergencyContactName || "Pooja Pokale",
         relationship: user.emergencyContactRelation || "Spouse",
         phone: user.emergencyContactPhone || "+91 98201 44522"
       }

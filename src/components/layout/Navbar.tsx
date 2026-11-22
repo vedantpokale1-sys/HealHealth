@@ -6,7 +6,7 @@ import { Button } from '../ui/Button';
 
 export const Navbar: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user, logout } = useAuth();
   const navigate = useNavigate();
 
   const navLinks = [
@@ -46,9 +46,21 @@ export const Navbar: React.FC = () => {
         {/* Actions */}
         <div className="hidden lg:flex items-center gap-3">
           {isAuthenticated ? (
-            <Button variant="primary" size="sm" onClick={() => navigate('/dashboard')} rightIcon={<ArrowRight className="w-4 h-4" />}>
-              My Dashboard
-            </Button>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold text-slate-700 bg-slate-100 px-2.5 py-1.5 rounded-lg border border-slate-200">
+                👤 {user?.name || 'Vedant Pokale'}
+              </span>
+              <Button variant="primary" size="sm" onClick={() => navigate('/dashboard')} rightIcon={<ArrowRight className="w-4 h-4" />}>
+                My Dashboard
+              </Button>
+              <button
+                type="button"
+                onClick={() => logout()}
+                className="text-xs text-rose-600 hover:text-rose-700 font-semibold px-2 py-1.5 hover:bg-rose-50 rounded-lg transition"
+              >
+                Sign out
+              </button>
+            </div>
           ) : (
             <div className="flex items-center gap-2">
               <Link to="/login" className="text-sm font-semibold text-ink-soft hover:text-ink px-3 py-2 rounded-lg transition">
