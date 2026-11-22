@@ -126,6 +126,16 @@ export interface ChatMessage {
   };
 }
 
+export interface ExtendedChatMessage extends ChatMessage {
+  modelUsed?: string;
+  citations?: Array<{ title: string; url: string }>;
+  recommendedDoctors?: Doctor[];
+  recommendedFacilities?: HealthcareFacility[];
+  isEmergencyAlert?: boolean;
+  isError?: boolean;
+  failedPrompt?: string;
+}
+
 export interface AnatomyRegion {
   id: string;
   name: string;

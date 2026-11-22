@@ -24,23 +24,15 @@ import {
 } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
-import { ChatMessage, Doctor, HealthcareFacility } from '../types';
+import { ChatMessage, Doctor, HealthcareFacility, ExtendedChatMessage } from '../types';
 import { api, AiModelOption } from '../services/api';
-
-interface ExtendedChatMessage extends ChatMessage {
-  modelUsed?: string;
-  citations?: Array<{ title: string; url: string }>;
-  recommendedDoctors?: Doctor[];
-  recommendedFacilities?: HealthcareFacility[];
-  isEmergencyAlert?: boolean;
-  isError?: boolean;
-  failedPrompt?: string;
-}
+import { useApp } from '../context/AppContext';
 
 export const AiNavigatorPage: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { aiChatMessages: messages, setAiChatMessages: setMessages, clearAiChat } = useApp();
 
   const [input, setInput] = useState('');
   const [isListening, setIsListening] = useState(false);
@@ -70,16 +62,6 @@ export const AiNavigatorPage: React.FC = () => {
   const [selectedModel, setSelectedModel] = useState<string>('nvidia/nemotron-3.5-super-vl-120b-a12b');
   const [selectedLanguage, setSelectedLanguage] = useState<'en' | 'hi' | 'mr'>('en');
 
-  const [messages, setMessages] = useState<ExtendedChatMessage[]>([
-    {
-      id: 'msg_init',
-      sender: 'ai',
-      text: "Hello! I am your HEALHEALTH AI Healthcare Navigator. Describe any physical symptoms, medications, or lab report questions. I will guide you with evidence-grounded clinical information, suggest follow-up questions, and connect you with verified medical specialists.",
-      timestamp: 'Just now',
-      modelUsed: 'nvidia/nemotron-3.5-super-vl-120b-a12b',
-    },
-  ]);
-
   // Load models on mount
   useEffect(() => {
     api.getAiModels().then((res) => {
@@ -98,6 +80,7 @@ export const AiNavigatorPage: React.FC = () => {
     const initialPrompt = params.get('prompt');
     if (initialPrompt && initialPrompt.trim()) {
       handleSend(initialPrompt);
+      navigate(location.pathname, { replace: true });
     }
   }, [location.search]);
 
@@ -208,15 +191,7 @@ export const AiNavigatorPage: React.FC = () => {
   };
 
   const resetChat = () => {
-    setMessages([
-      {
-        id: `msg_${Date.now()}`,
-        sender: 'ai',
-        text: "Conversation reset. Feel free to describe any new symptoms, health questions, or lab results.",
-        timestamp: 'Just now',
-        modelUsed: selectedModel,
-      },
-    ]);
+    clearAiChat();
   };
 
   const activeModelObj = availableModels.find((m) => m.id === selectedModel);
