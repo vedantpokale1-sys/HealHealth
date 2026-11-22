@@ -63,7 +63,7 @@ export const AppointmentBookingPage: React.FC = () => {
         time: selectedSlot,
         type: consultType,
         status: 'upcoming',
-        patientName: user?.name || 'Aarav Sharma',
+        patientName: user?.name || 'Vedant Pokale',
         notes: patientNotes,
         meetingLink: consultType === 'video' ? `https://meet.healhealth.app/room/apt-${Date.now()}` : undefined,
       });
@@ -201,7 +201,7 @@ export const AppointmentBookingPage: React.FC = () => {
                 <label className="block text-slate-500 mb-1">Patient Name</label>
                 <input
                   type="text"
-                  value={user?.name || 'Aarav Sharma'}
+                  value={user?.name || 'Vedant Pokale'}
                   disabled
                   className="w-full px-3 py-2 bg-slate-100 border border-slate-200 rounded-xl text-slate-700"
                 />

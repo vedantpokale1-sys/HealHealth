@@ -34,8 +34,8 @@ const inMemoryAppointments: any[] = [];
 const inMemoryUsers: any[] = [
   {
     id: 'usr_001',
-    email: 'aarav.sharma@example.com',
-    name: 'Aarav Sharma',
+    email: 'vedant.pokale@example.com',
+    name: 'Vedant Pokale',
     phone: '+91 98201 44521',
     bloodGroup: 'B+',
     dob: '1992-06-14',

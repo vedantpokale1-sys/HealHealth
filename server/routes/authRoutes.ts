@@ -12,8 +12,8 @@ authRouter.post('/login', (req, res) => {
   if (!user) {
     user = userDao.getById('usr_001') || {
       id: 'usr_001',
-      name: 'Aarav Sharma',
-      email: email || 'aarav.sharma@example.com',
+      name: 'Vedant Pokale',
+      email: email || 'vedant.pokale@example.com',
       phone: '+91 98201 44521',
       bloodGroup: 'B+',
       dob: '1992-06-14',

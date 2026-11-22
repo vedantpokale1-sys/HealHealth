@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { Button } from '../components/ui/Button';
 
 export const LoginPage: React.FC = () => {
-  const [email, setEmail] = useState('aarav.sharma@example.com');
+  const [email, setEmail] = useState('vedant.pokale@example.com');
   const [password, setPassword] = useState('HealSecure2026!');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);

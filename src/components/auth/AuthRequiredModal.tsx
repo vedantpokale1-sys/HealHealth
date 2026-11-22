@@ -83,7 +83,7 @@ export const AuthRequiredModal: React.FC<AuthRequiredModalProps> = ({
             </span>
           </div>
           <p className="text-[11px] text-teal-800 leading-snug">
-            Instantly loads patient portal (Aarav Sharma) with telemetry and proceeds to your requested action.
+            Instantly loads patient portal (Vedant Pokale) with telemetry and proceeds to your requested action.
           </p>
           <Button
             type="button"

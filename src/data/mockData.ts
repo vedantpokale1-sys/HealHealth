@@ -2,8 +2,8 @@ import { Doctor, Appointment, MedicalReport, Medication, FamilyMember, Notificat
 
 export const INITIAL_USER = {
   id: 'usr_001',
-  name: 'Aarav Sharma',
-  email: 'aarav.sharma@example.com',
+  name: 'Vedant Pokale',
+  email: 'vedant.pokale@example.com',
   phone: '+91 98201 44521',
   bloodGroup: 'B+',
   dob: '1992-06-14',
@@ -166,7 +166,7 @@ export const MOCK_APPOINTMENTS: Appointment[] = [
     time: '10:30 AM',
     type: 'video',
     status: 'upcoming',
-    patientName: 'Aarav Sharma',
+    patientName: 'Vedant Pokale',
     notes: 'Follow-up consultation on recent lipid profile report and blood pressure check.',
     meetingLink: 'https://meet.healhealth.app/room/apt-101-kulkarni',
   },
@@ -181,7 +181,7 @@ export const MOCK_APPOINTMENTS: Appointment[] = [
     time: '11:00 AM',
     type: 'in-person',
     status: 'upcoming',
-    patientName: 'Aarav Sharma',
+    patientName: 'Vedant Pokale',
     notes: 'Routine HbA1c review and metabolic screening.',
   },
   {
@@ -195,7 +195,7 @@ export const MOCK_APPOINTMENTS: Appointment[] = [
     time: '04:15 PM',
     type: 'video',
     status: 'completed',
-    patientName: 'Aarav Sharma',
+    patientName: 'Vedant Pokale',
     notes: 'Seasonal cough & rhinitis symptom review. Prescribed antihistamines.',
   },
   {
@@ -209,7 +209,7 @@ export const MOCK_APPOINTMENTS: Appointment[] = [
     time: '03:00 PM',
     type: 'in-person',
     status: 'cancelled',
-    patientName: 'Aarav Sharma',
+    patientName: 'Vedant Pokale',
     notes: 'Patient rescheduled due to travel conflict.',
   },
 ];

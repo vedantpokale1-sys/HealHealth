@@ -18,9 +18,9 @@ export function seedDatabase() {
     `);
     insertUser.run(
       'usr_001',
-      'aarav.sharma@example.com',
+      'vedant.pokale@example.com',
       'demo1234', // Demo password
-      'Aarav Sharma',
+      'Vedant Pokale',
       '+91 98201 44521',
       'B+',
       '1992-06-14',
@@ -32,7 +32,7 @@ export function seedDatabase() {
       JSON.stringify(['Penicillin', 'Peanuts']),
       JSON.stringify(['Mild Asthma', 'Seasonal Rhinitis'])
     );
-    console.log('✔ Seeded demo user: Aarav Sharma (usr_001)');
+    console.log('✔ Seeded demo user: Vedant Pokale (usr_001)');
   }
 
   // 2. Seed Doctors

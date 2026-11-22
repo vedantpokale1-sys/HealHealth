@@ -44573,8 +44573,8 @@ var inMemoryAppointments = [];
 var inMemoryUsers = [
   {
     id: "usr_001",
-    email: "aarav.sharma@example.com",
-    name: "Aarav Sharma",
+    email: "vedant.pokale@example.com",
+    name: "Vedant Pokale",
     phone: "+91 98201 44521",
     bloodGroup: "B+",
     dob: "1992-06-14",
@@ -45112,10 +45112,10 @@ function seedDatabase() {
     `);
     insertUser.run(
       "usr_001",
-      "aarav.sharma@example.com",
+      "vedant.pokale@example.com",
       "demo1234",
       // Demo password
-      "Aarav Sharma",
+      "Vedant Pokale",
       "+91 98201 44521",
       "B+",
       "1992-06-14",
@@ -45127,7 +45127,7 @@ function seedDatabase() {
       JSON.stringify(["Penicillin", "Peanuts"]),
       JSON.stringify(["Mild Asthma", "Seasonal Rhinitis"])
     );
-    console.log("\u2714 Seeded demo user: Aarav Sharma (usr_001)");
+    console.log("\u2714 Seeded demo user: Vedant Pokale (usr_001)");
   }
   const countDocs = db.prepare("SELECT COUNT(*) as count FROM doctors").get();
   if (countDocs.count === 0) {
@@ -46281,8 +46281,8 @@ authRouter.post("/login", (req, res) => {
   if (!user) {
     user = userDao.getById("usr_001") || {
       id: "usr_001",
-      name: "Aarav Sharma",
-      email: email3 || "aarav.sharma@example.com",
+      name: "Vedant Pokale",
+      email: email3 || "vedant.pokale@example.com",
       phone: "+91 98201 44521",
       bloodGroup: "B+",
       dob: "1992-06-14",
