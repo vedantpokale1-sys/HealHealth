@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Activity, Lock, Mail, Eye, EyeOff, ShieldCheck, ArrowRight, Zap } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { Button } from '../components/ui/Button';
@@ -13,8 +13,31 @@ export const LoginPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [resetSent, setResetSent] = useState(false);
 
-  const { login } = useAuth();
+  const { login, quickDemoLogin } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const rawTarget =
+    (location.state as any)?.redirectTo ||
+    (location.state as any)?.from?.pathname ||
+    '/dashboard';
+  const targetSearch = (location.state as any)?.from?.search || '';
+  const redirectTarget = `${rawTarget}${targetSearch}`;
+
+  const destinationLabel =
+    rawTarget.includes('/booking')
+      ? 'Doctor Appointment Booking'
+      : rawTarget.includes('/doctors')
+      ? 'Specialist & Doctor Directory'
+      : rawTarget.includes('/locations')
+      ? 'Hospitals & Clinics Near Me'
+      : rawTarget.includes('/reports')
+      ? 'AI Report Analyzer'
+      : rawTarget.includes('/ai-navigator')
+      ? 'AI Healthcare Navigator'
+      : rawTarget !== '/dashboard' && rawTarget !== '/'
+      ? rawTarget
+      : null;
 
   const validate = () => {
     const errs: { [key: string]: string } = {};
@@ -31,19 +54,13 @@ export const LoginPage: React.FC = () => {
     setTimeout(async () => {
       await login(email, password);
       setIsLoading(false);
-      navigate('/dashboard');
-    }, 500);
+      navigate(redirectTarget, { replace: true });
+    }, 400);
   };
 
   const handleQuickDemo = () => {
-    setEmail('aarav.sharma@example.com');
-    setPassword('HealSecure2026!');
-    setIsLoading(true);
-    setTimeout(async () => {
-      await login('aarav.sharma@example.com', 'HealSecure2026!');
-      setIsLoading(false);
-      navigate('/dashboard');
-    }, 400);
+    quickDemoLogin();
+    navigate(redirectTarget, { replace: true });
   };
 
   return (
@@ -65,6 +82,18 @@ export const LoginPage: React.FC = () => {
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white py-8 px-6 shadow-xl shadow-slate-200/50 rounded-2xl border border-slate-200 sm:px-8">
+          {destinationLabel && (
+            <div className="mb-5 p-3.5 bg-amber-50/90 border border-amber-200 rounded-xl text-xs text-amber-950 flex items-start gap-2.5">
+              <Lock className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
+              <div>
+                <p className="font-bold">Login required to proceed</p>
+                <p className="text-amber-800 text-[11px] mt-0.5">
+                  Sign in or use 1-Click Demo to access <strong>{destinationLabel}</strong>.
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* Quick Demo Access Pill */}
           <div className="mb-6 p-3.5 bg-gradient-to-r from-teal-50 to-sky-50 border border-teal-200 rounded-xl flex items-center justify-between gap-2">
             <div>
@@ -161,7 +190,11 @@ export const LoginPage: React.FC = () => {
 
           <div className="mt-6 text-center text-xs text-slate-600">
             Don't have an account yet?{' '}
-            <Link to="/signup" className="font-semibold text-teal-600 hover:text-teal-700">
+            <Link
+              to="/signup"
+              state={{ redirectTo: redirectTarget }}
+              className="font-semibold text-teal-600 hover:text-teal-700"
+            >
               Create an account
             </Link>
           </div>

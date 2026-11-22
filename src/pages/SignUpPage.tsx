@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Activity, Lock, Mail, User, Eye, EyeOff, ShieldCheck, ArrowRight, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { Button } from '../components/ui/Button';
@@ -16,6 +16,12 @@ export const SignUpPage: React.FC = () => {
 
   const { signup } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const redirectTo =
+    (location.state as any)?.redirectTo ||
+    (location.state as any)?.from?.pathname ||
+    '/onboarding';
 
   const validate = () => {
     const errs: { [key: string]: string } = {};
@@ -35,7 +41,7 @@ export const SignUpPage: React.FC = () => {
     setTimeout(async () => {
       await signup(name, email, password);
       setIsLoading(false);
-      navigate('/onboarding');
+      navigate(redirectTo === '/onboarding' ? '/onboarding' : redirectTo);
     }, 600);
   };
 
@@ -161,7 +167,11 @@ export const SignUpPage: React.FC = () => {
 
           <div className="mt-6 text-center text-xs text-slate-600">
             Already have an account?{' '}
-            <Link to="/login" className="font-semibold text-teal-600 hover:text-teal-700">
+            <Link
+              to="/login"
+              state={{ redirectTo: redirectTo !== '/onboarding' ? redirectTo : undefined }}
+              className="font-semibold text-teal-600 hover:text-teal-700"
+            >
               Sign in here
             </Link>
           </div>

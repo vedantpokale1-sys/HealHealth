@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { AppProvider } from './context/AppContext';
 import { AppLayout } from './components/layout/AppLayout';
+import { ProtectedRoute } from './components/auth/ProtectedRoute';
 
 // Public Pages
 import { LandingPage } from './pages/LandingPage';
@@ -45,7 +46,13 @@ export function App() {
             <Route path="/onboarding" element={<OnboardingPage />} />
 
             {/* Authenticated Clinical SaaS Shell */}
-            <Route element={<AppLayout />}>
+            <Route
+              element={
+                <ProtectedRoute>
+                  <AppLayout />
+                </ProtectedRoute>
+              }
+            >
               <Route path="/dashboard" element={<DashboardPage />} />
               <Route path="/ai-navigator" element={<AiNavigatorPage />} />
               <Route path="/doctors" element={<DoctorDiscoveryPage />} />

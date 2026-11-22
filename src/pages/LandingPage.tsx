@@ -1,22 +1,23 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
-  Activity,
   Search,
   MapPin,
-  ArrowRight,
-  ChevronRight,
-  ShieldCheck,
-  Languages,
-  Lock,
-  BookOpenCheck,
-  Bot,
-  CalendarCheck,
-  FileText,
-  Layers,
   HeartPulse,
   Droplets,
   Brain,
+  ShieldCheck,
+  CalendarCheck,
+  Bot,
+  FileText,
+  Layers,
+  ArrowRight,
+  ChevronRight,
+  Languages,
+  BookOpenCheck,
+  Activity,
+  Lock,
+  ChevronDown,
   Bone,
   Baby,
   Eye,
@@ -30,6 +31,8 @@ import { Footer } from '../components/layout/Footer';
 import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
 import { Card } from '../components/ui/Card';
+import { AuthRequiredModal } from '../components/auth/AuthRequiredModal';
+import { useAuth } from '../context/AuthContext';
 import { MOCK_DOCTORS, FAQS } from '../data/mockData';
 
 const SPECIALTIES = [
@@ -39,21 +42,58 @@ const SPECIALTIES = [
   { name: 'Orthopedics', icon: Bone, desc: 'Bones, joints, sports injuries and mobility.' },
   { name: 'Pediatrics', icon: Baby, desc: 'Newborn to teen health and development.' },
   { name: 'Ophthalmology', icon: Eye, desc: 'Vision, eye strain and eye examinations.' },
-  { name: 'Gynecology', icon: Flower2, desc: 'Women\u2019s health, pregnancy and wellness.' },
+  { name: 'Gynecology', icon: Flower2, desc: 'Women’s health, pregnancy and wellness.' },
   { name: 'Casualty', icon: Thermometer, desc: 'Acute viral fevers, dengue, cold, and rapid triage.' },
   { name: 'General Medicine', icon: Stethoscope, desc: 'Everyday illness, check-ups and referrals.' },
 ];
 
 export const LandingPage: React.FC = () => {
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
   const [activeFaq, setActiveFaq] = useState<number | null>(0);
   const [searchQuery, setSearchQuery] = useState('');
 
+  const [authModal, setAuthModal] = useState<{
+    isOpen: boolean;
+    targetUrl: string;
+    actionTitle?: string;
+    actionDescription?: string;
+  }>({
+    isOpen: false,
+    targetUrl: '/dashboard',
+  });
+
   const previewDoctors = MOCK_DOCTORS.slice(0, 3);
+
+  const handleProtectedAction = (
+    targetUrl: string,
+    actionTitle?: string,
+    actionDescription?: string
+  ) => {
+    if (isAuthenticated) {
+      navigate(targetUrl);
+    } else {
+      setAuthModal({
+        isOpen: true,
+        targetUrl,
+        actionTitle: actionTitle || 'Sign in to access HEALHEALTH',
+        actionDescription:
+          actionDescription ||
+          'Please sign in or create an account to view doctor profiles, book consultations, and access clinic locations.',
+      });
+    }
+  };
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    navigate(searchQuery.trim() ? `/doctors?query=${encodeURIComponent(searchQuery.trim())}` : '/doctors');
+    const dest = searchQuery.trim()
+      ? `/doctors?query=${encodeURIComponent(searchQuery.trim())}`
+      : '/doctors';
+    handleProtectedAction(
+      dest,
+      'Sign in to search verified doctors',
+      'Please sign in or create an account to view real-time doctor availability and consultation schedules.'
+    );
   };
 
   return (
@@ -92,29 +132,47 @@ export const LandingPage: React.FC = () => {
                   />
                 </div>
                 <div className="hidden sm:block w-px bg-hairline my-1" />
-                <Link
-                  to="/locations"
-                  className="flex items-center gap-2 px-3 py-2.5 text-sm text-ink-soft hover:text-brand-700 rounded-lg hover:bg-slate-50 transition"
+                <button
+                  type="button"
+                  onClick={() =>
+                    handleProtectedAction(
+                      '/locations',
+                      'Sign in to view nearby clinics & hospitals',
+                      'Please sign in or create an account to view emergency medical centers and clinics near your location.'
+                    )
+                  }
+                  className="flex items-center gap-2 px-3 py-2.5 text-sm text-ink-soft hover:text-brand-700 rounded-lg hover:bg-slate-50 transition cursor-pointer"
                 >
                   <MapPin className="w-4 h-4 text-brand-600" />
                   <span>Near me</span>
-                </Link>
+                </button>
                 <Button type="submit" variant="teal" className="sm:px-5">
                   Find a Doctor
                 </Button>
               </form>
 
-              <p className="text-xs text-slate-500 animate-fade-up" style={{ animationDelay: '200ms' }}>
-                Popular:{' '}
-                {['Cardiology', 'Pediatrics', 'General Medicine'].map((s, i) => (
+              <div className="text-xs text-slate-500 animate-fade-up flex flex-wrap items-center gap-1" style={{ animationDelay: '200ms' }}>
+                <span>Popular:</span>
+                {['Cardiology', 'Casualty', 'Pediatrics', 'General Medicine'].map((s, i) => (
                   <React.Fragment key={s}>
-                    {i > 0 && ' · '}
-                    <Link to={`/doctors?specialty=${encodeURIComponent(s)}`} className="text-brand-700 hover:underline font-medium">
+                    {i > 0 && <span className="text-slate-300">·</span>}
+                    <button
+                      key={s}
+                      type="button"
+                      onClick={() =>
+                        handleProtectedAction(
+                          `/doctors?specialty=${encodeURIComponent(s)}`,
+                          `Sign in to view ${s} specialists`,
+                          `Please sign in or create an account to consult verified ${s} doctors.`
+                        )
+                      }
+                      className="text-brand-700 hover:underline font-medium cursor-pointer"
+                    >
                       {s}
-                    </Link>
+                    </button>
                   </React.Fragment>
                 ))}
-              </p>
+              </div>
             </div>
 
             {/* Professional healthcare photography */}
@@ -151,14 +209,21 @@ export const LandingPage: React.FC = () => {
             </p>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-x-6 gap-y-2">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-x-6 gap-y-3">
             {SPECIALTIES.map((sp) => {
               const Icon = sp.icon;
               return (
-                <Link
+                <button
                   key={sp.name}
-                  to={`/doctors?specialty=${encodeURIComponent(sp.name)}`}
-                  className="group flex items-start gap-3.5 py-4 border-t border-hairline hover:bg-ivory/60 rounded-b-lg px-2 -mx-2 transition-colors"
+                  type="button"
+                  onClick={() =>
+                    handleProtectedAction(
+                      `/doctors?specialty=${encodeURIComponent(sp.name)}`,
+                      `Sign in to consult ${sp.name}`,
+                      `Please sign in or create an account to view verified ${sp.name} specialists.`
+                    )
+                  }
+                  className="group flex items-start gap-3.5 py-4 border-t border-hairline hover:bg-ivory/60 rounded-b-lg px-2 -mx-2 transition-colors text-left w-full cursor-pointer"
                 >
                   <div className="w-10 h-10 rounded-lg bg-brand-50 border border-brand-100 flex items-center justify-center text-brand-700 shrink-0">
                     <Icon className="w-5 h-5" />
@@ -170,7 +235,7 @@ export const LandingPage: React.FC = () => {
                     </p>
                     <p className="text-xs text-ink-soft mt-0.5 leading-relaxed">{sp.desc}</p>
                   </div>
-                </Link>
+                </button>
               );
             })}
           </div>
@@ -239,10 +304,20 @@ export const LandingPage: React.FC = () => {
                 Transparent fees, real availability, and the languages they actually consult in.
               </p>
             </div>
-            <Link to="/doctors" className="inline-flex items-center gap-1.5 text-sm font-bold text-brand-700 hover:text-brand-800 w-fit">
+            <button
+              type="button"
+              onClick={() =>
+                handleProtectedAction(
+                  '/doctors',
+                  'Sign in to view all verified doctors',
+                  'Please sign in or create an account to browse doctor credentials, patient ratings, and open consultation slots.'
+                )
+              }
+              className="inline-flex items-center gap-1.5 text-sm font-bold text-brand-700 hover:text-brand-800 w-fit cursor-pointer"
+            >
               <span>View all doctors</span>
               <ArrowRight className="w-4 h-4" />
-            </Link>
+            </button>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -285,10 +360,32 @@ export const LandingPage: React.FC = () => {
                 </div>
 
                 <div className="flex items-center gap-2 mt-auto pt-3 border-t border-hairline">
-                  <Button variant="outline" size="sm" className="flex-1 text-xs" onClick={() => navigate(`/doctors/${doc.id}`)}>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1 text-xs"
+                    onClick={() =>
+                      handleProtectedAction(
+                        `/doctors/${doc.id}`,
+                        `Sign in to view ${doc.name}'s profile`,
+                        `Please sign in to check ${doc.name}'s verified qualifications, clinic location, and patient reviews.`
+                      )
+                    }
+                  >
                     View Profile
                   </Button>
-                  <Button variant="teal" size="sm" className="flex-1 text-xs" onClick={() => navigate(`/booking/${doc.id}`)}>
+                  <Button
+                    variant="teal"
+                    size="sm"
+                    className="flex-1 text-xs"
+                    onClick={() =>
+                      handleProtectedAction(
+                        `/booking/${doc.id}`,
+                        `Sign in to book with ${doc.name}`,
+                        `Please sign in or create an account to book your consultation (Fee: ₹${doc.consultationFee}) with ${doc.name}.`
+                      )
+                    }
+                  >
                     Book
                   </Button>
                 </div>
@@ -347,13 +444,33 @@ export const LandingPage: React.FC = () => {
               </div>
 
               <div className="flex flex-wrap items-center gap-3 pt-2">
-                <Button variant="teal" onClick={() => navigate('/ai-navigator')} rightIcon={<ArrowRight className="w-4 h-4" />}>
+                <Button
+                  variant="teal"
+                  onClick={() =>
+                    handleProtectedAction(
+                      '/ai-navigator',
+                      'Sign in to consult AI Navigator',
+                      'Please sign in to start a private clinical triage session with BYNARA AI.'
+                    )
+                  }
+                  rightIcon={<ArrowRight className="w-4 h-4" />}
+                >
                   Open the AI Navigator
                 </Button>
-                <Link to="/reports/analyzer" className="inline-flex items-center gap-1.5 text-sm font-semibold text-ink-soft hover:text-brand-700">
+                <button
+                  type="button"
+                  onClick={() =>
+                    handleProtectedAction(
+                      '/reports/analyzer',
+                      'Sign in to analyze lab reports',
+                      'Please sign in or create an account to upload and analyze your laboratory blood tests and imaging reports.'
+                    )
+                  }
+                  className="inline-flex items-center gap-1.5 text-sm font-semibold text-ink-soft hover:text-brand-700 cursor-pointer"
+                >
                   <FileText className="w-4 h-4" />
                   Analyze a lab report
-                </Link>
+                </button>
               </div>
             </div>
           </div>
@@ -397,10 +514,20 @@ export const LandingPage: React.FC = () => {
                   <Icon className="w-6 h-6 text-brand-700 mb-3" />
                   <h3 className="text-base font-bold text-ink mb-2">{tool.title}</h3>
                   <p className="text-[13px] text-ink-soft leading-relaxed mb-4">{tool.desc}</p>
-                  <Link to={tool.to} className="inline-flex items-center gap-1 text-sm font-bold text-brand-700 hover:text-brand-800">
-                    {tool.link}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleProtectedAction(
+                        tool.to,
+                        `Sign in to access ${tool.title}`,
+                        'Please sign in or create an account to access this clinical feature.'
+                      )
+                    }
+                    className="inline-flex items-center gap-1 text-sm font-bold text-brand-700 hover:text-brand-800 cursor-pointer"
+                  >
+                    <span>{tool.link}</span>
                     <ChevronRight className="w-4 h-4" />
-                  </Link>
+                  </button>
                 </div>
               );
             })}
@@ -449,26 +576,25 @@ export const LandingPage: React.FC = () => {
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="text-2xl sm:text-3xl font-bold text-ink mb-8 text-center">Frequently asked questions</h2>
 
-          <div className="divide-y divide-hairline border-y border-hairline">
-            {FAQS.map((faq, idx) => {
-              const isOpen = activeFaq === idx;
+          <div className="space-y-3">
+            {FAQS.map((faq, i) => {
+              const isOpen = activeFaq === i;
               return (
-                <div key={faq.question}>
+                <div key={faq.question} className="border border-hairline rounded-xl overflow-hidden">
                   <button
                     type="button"
-                    onClick={() => setActiveFaq(isOpen ? null : idx)}
-                    className="w-full py-4.5 px-1 text-left flex items-center justify-between gap-4 text-sm font-semibold text-ink hover:text-brand-700 transition"
-                    aria-expanded={isOpen}
+                    onClick={() => setActiveFaq(isOpen ? null : i)}
+                    className="w-full flex items-center justify-between p-4 text-left bg-white hover:bg-ivory/60 transition"
                   >
-                    <span>{faq.question}</span>
-                    <ChevronRight
-                      className={`w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0 ${
-                        isOpen ? 'rotate-90 text-brand-700' : ''
-                      }`}
+                    <span className="text-sm font-bold text-ink">{faq.question}</span>
+                    <ChevronDown
+                      className={`w-4 h-4 text-slate-400 transition-transform ${isOpen ? 'rotate-180' : ''}`}
                     />
                   </button>
                   {isOpen && (
-                    <div className="pb-5 px-1 text-[13px] text-ink-soft leading-relaxed animate-fade-in">{faq.answer}</div>
+                    <div className="p-4 pt-0 bg-white text-xs text-ink-soft leading-relaxed border-t border-hairline/60">
+                      {faq.answer}
+                    </div>
                   )}
                 </div>
               );
@@ -489,7 +615,17 @@ export const LandingPage: React.FC = () => {
             <Button variant="teal" size="lg" onClick={() => navigate('/signup')} rightIcon={<ArrowRight className="w-5 h-5" />}>
               Create Free Account
             </Button>
-            <Button variant="outline" size="lg" onClick={() => navigate('/doctors')}>
+            <Button
+              variant="outline"
+              size="lg"
+              onClick={() =>
+                handleProtectedAction(
+                  '/doctors',
+                  'Sign in to browse doctors',
+                  'Please sign in or create an account to browse all verified medical specialists.'
+                )
+              }
+            >
               Browse Doctors
             </Button>
           </div>
@@ -497,6 +633,15 @@ export const LandingPage: React.FC = () => {
       </section>
 
       <Footer />
+
+      {/* Authentication Prompt Modal */}
+      <AuthRequiredModal
+        isOpen={authModal.isOpen}
+        onClose={() => setAuthModal((prev) => ({ ...prev, isOpen: false }))}
+        targetUrl={authModal.targetUrl}
+        actionTitle={authModal.actionTitle}
+        actionDescription={authModal.actionDescription}
+      />
     </div>
   );
 };

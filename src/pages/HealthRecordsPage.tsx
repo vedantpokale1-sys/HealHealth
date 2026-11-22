@@ -56,17 +56,17 @@ export const HealthRecordsPage: React.FC = () => {
       {/* Patient Health Summary Bar */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card className="p-4 bg-teal-50/60 border-teal-200 text-xs space-y-1">
-          <span className="font-bold text-teal-900">Known Allergies ({user?.allergies.length || 0})</span>
-          <p className="text-teal-800 font-semibold">{user?.allergies.join(', ') || 'None reported'}</p>
+          <span className="font-bold text-teal-900">Known Allergies ({user?.allergies?.length || 0})</span>
+          <p className="text-teal-800 font-semibold">{user?.allergies?.join(', ') || 'None reported'}</p>
         </Card>
         <Card className="p-4 bg-sky-50/60 border-sky-200 text-xs space-y-1">
-          <span className="font-bold text-sky-900">Chronic Conditions ({user?.chronicConditions.length || 0})</span>
-          <p className="text-sky-800 font-semibold">{user?.chronicConditions.join(', ') || 'None noted'}</p>
+          <span className="font-bold text-sky-900">Chronic Conditions ({user?.chronicConditions?.length || 0})</span>
+          <p className="text-sky-800 font-semibold">{user?.chronicConditions?.join(', ') || 'None noted'}</p>
         </Card>
         <Card className="p-4 bg-purple-50/60 border-purple-200 text-xs space-y-1">
           <span className="font-bold text-purple-900">Emergency ID Link</span>
           <p className="text-purple-800 font-semibold">
-            {user?.emergencyContact.name} ({user?.emergencyContact.phone})
+            {user?.emergencyContact?.name ? `${user.emergencyContact.name} (${user.emergencyContact.phone})` : 'None linked'}
           </p>
         </Card>
       </div>
