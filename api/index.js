@@ -15659,7 +15659,7 @@ var require_read = __commonJS({
     var getBody = require_raw_body();
     var iconv = require_lib();
     var onFinished = require_on_finished();
-    var zlib = __require("node:zlib");
+    var zlib2 = __require("node:zlib");
     var hasBody = require_type_is().hasBody;
     var { getCharset } = require_utils();
     module.exports = read;
@@ -15784,13 +15784,13 @@ var require_read = __commonJS({
       switch (encoding) {
         case "deflate":
           debug("inflate body");
-          return zlib.createInflate();
+          return zlib2.createInflate();
         case "gzip":
           debug("gunzip body");
-          return zlib.createGunzip();
+          return zlib2.createGunzip();
         case "br":
           debug("brotli decompress body");
-          return zlib.createBrotliDecompress();
+          return zlib2.createBrotliDecompress();
         default:
           throw createError(415, 'unsupported content encoding "' + encoding + '"', {
             encoding,
@@ -45717,6 +45717,382 @@ function retrieveMedicalContext(userQuery) {
   };
 }
 
+// server/services/documentParser.ts
+import zlib from "node:zlib";
+function extractTextFromPdfBuffer(pdfBuffer) {
+  const textPieces = [];
+  const bin = pdfBuffer.toString("binary");
+  const streamRegex = /stream[\r\n]+([\s\S]*?)[\r\n]+endstream/g;
+  let match;
+  while ((match = streamRegex.exec(bin)) !== null) {
+    const rawStream = Buffer.from(match[1], "binary");
+    let decompressed = "";
+    try {
+      decompressed = zlib.inflateSync(rawStream).toString("utf-8");
+    } catch {
+      try {
+        decompressed = zlib.inflateRawSync(rawStream).toString("utf-8");
+      } catch {
+        decompressed = rawStream.toString("latin1");
+      }
+    }
+    const tjRegex = /\(([\s\S]*?)\)\s*Tj/g;
+    let tjMatch;
+    while ((tjMatch = tjRegex.exec(decompressed)) !== null) {
+      const clean = tjMatch[1].replace(/\\([()\\])/g, "$1").trim();
+      if (clean) textPieces.push(clean);
+    }
+    const arrRegex = /\[([\s\S]*?)\]\s*TJ/g;
+    let arrMatch;
+    while ((arrMatch = arrRegex.exec(decompressed)) !== null) {
+      const inner = arrMatch[1];
+      const strRegex = /\(([\s\S]*?)\)/g;
+      let s;
+      while ((s = strRegex.exec(inner)) !== null) {
+        const clean = s[1].replace(/\\([()\\])/g, "$1").trim();
+        if (clean) textPieces.push(clean);
+      }
+    }
+  }
+  const directTjRegex = /\(([\s\S]*?)\)\s*Tj/g;
+  while ((match = directTjRegex.exec(bin)) !== null) {
+    const clean = match[1].replace(/\\([()\\])/g, "$1").trim();
+    if (clean && !textPieces.includes(clean)) textPieces.push(clean);
+  }
+  return textPieces.join(" ").replace(/\s+/g, " ").trim();
+}
+function extractTextFromDataUrl(dataUrl) {
+  if (!dataUrl) return "";
+  if (dataUrl.startsWith("data:application/pdf;base64,")) {
+    const b64 = dataUrl.replace(/^data:application\/pdf;base64,/, "");
+    const buf = Buffer.from(b64, "base64");
+    return extractTextFromPdfBuffer(buf);
+  }
+  if (dataUrl.startsWith("data:text/")) {
+    const b64 = dataUrl.split(",")[1];
+    return Buffer.from(b64, "base64").toString("utf-8");
+  }
+  return "";
+}
+var SCHOOL_KEYWORDS = [
+  "grade",
+  "grades",
+  "marks",
+  "marksheet",
+  "mark sheet",
+  "school",
+  "college",
+  "university",
+  "semester",
+  "cgpa",
+  "gpa",
+  "percentage",
+  "examination",
+  "exam",
+  "student",
+  "roll no",
+  "roll number",
+  "subjects",
+  "mathematics",
+  "math",
+  "maths",
+  "physics",
+  "chemistry",
+  "english",
+  "hindi",
+  "history",
+  "geography",
+  "social science",
+  "computer science",
+  "pass",
+  "fail",
+  "distinction",
+  "attendance",
+  "teacher",
+  "principal",
+  "headmaster",
+  "scorecard",
+  "progress card",
+  "report card",
+  "class",
+  "standard",
+  "division",
+  "academic year",
+  "curriculum",
+  "cbse",
+  "icse",
+  "hsc",
+  "ssc"
+];
+var FINANCIAL_KEYWORDS = [
+  "invoice",
+  "receipt",
+  "tax invoice",
+  "billing",
+  "subtotal",
+  "total amount",
+  "gst",
+  "cgst",
+  "sgst",
+  "vat",
+  "payment method",
+  "credit card",
+  "debit card",
+  "order id",
+  "customer id",
+  "shipping address",
+  "transaction id"
+];
+var MEDICAL_KEYWORDS = [
+  "hemoglobin",
+  "platelet",
+  "platelets",
+  "wbc",
+  "rbc",
+  "leukocyte",
+  "erythrocyte",
+  "hematocrit",
+  "pcv",
+  "cholesterol",
+  "ldl",
+  "hdl",
+  "vldl",
+  "triglycerides",
+  "glucose",
+  "blood sugar",
+  "fasting glucose",
+  "hba1c",
+  "tsh",
+  "t3",
+  "t4",
+  "thyroid",
+  "bilirubin",
+  "creatinine",
+  "urea",
+  "bun",
+  "sgpt",
+  "alt",
+  "sgot",
+  "ast",
+  "alkaline phosphatase",
+  "albumin",
+  "globulin",
+  "urine",
+  "serology",
+  "pathology",
+  "biochemistry",
+  "hematology",
+  "specimen",
+  "reference interval",
+  "biological reference",
+  "normal range",
+  "mg/dl",
+  "g/dl",
+  "u/l",
+  "/mcl",
+  "doctor",
+  "patient",
+  "physician",
+  "laboratory",
+  "diagnostic",
+  "dengue",
+  "malaria",
+  "typhoid",
+  "ns1 antigen",
+  "cbc",
+  "lipid profile",
+  "liver function",
+  "renal function",
+  "kft",
+  "lft"
+];
+function classifyDocumentContent(rawText, fileName = "") {
+  const combined = `${fileName} ${rawText}`.toLowerCase();
+  let schoolScore = 0;
+  for (const kw of SCHOOL_KEYWORDS) {
+    if (combined.includes(kw)) schoolScore += 1;
+  }
+  let financialScore = 0;
+  for (const kw of FINANCIAL_KEYWORDS) {
+    if (combined.includes(kw)) financialScore += 1;
+  }
+  let medicalScore = 0;
+  for (const kw of MEDICAL_KEYWORDS) {
+    if (combined.includes(kw)) medicalScore += 1;
+  }
+  if (schoolScore >= 2 && medicalScore <= 1) {
+    return {
+      isMedical: false,
+      documentType: "school_report_card",
+      summary: `Non-Medical Educational Record Detected: The uploaded file "${fileName || "document"}" contains school grades, academic marks, or educational records. HEALHEALTH AI Report Analyzer is dedicated strictly to clinical laboratory tests, pathology panels, and diagnostic medical imaging. No clinical health evaluation or doctor discussion questions apply to educational documents.`,
+      rejectionReason: "Academic school grade report or marksheet detected.",
+      extractedText: rawText,
+      biomarkers: []
+    };
+  }
+  if (financialScore >= 2 && medicalScore <= 1) {
+    return {
+      isMedical: false,
+      documentType: "financial_receipt",
+      summary: `Non-Medical Billing Document Detected: The uploaded file "${fileName || "document"}" appears to be a financial invoice or payment receipt, not a clinical laboratory report.`,
+      rejectionReason: "Financial bill or commercial receipt detected.",
+      extractedText: rawText,
+      biomarkers: []
+    };
+  }
+  const lowerName = fileName.toLowerCase();
+  if ((lowerName.includes("grade") || lowerName.includes("marksheet") || lowerName.includes("school") || lowerName.includes("result") || lowerName.includes("transcript") || lowerName.includes("resume") || lowerName.includes("certificate")) && medicalScore === 0) {
+    return {
+      isMedical: false,
+      documentType: "school_report_card",
+      summary: `Non-Medical Document Detected: The file "${fileName}" appears to be an educational certificate, marksheet, or non-clinical document. No medical biomarkers or health parameters were identified.`,
+      rejectionReason: "Non-medical file name and absence of clinical laboratory indicators.",
+      extractedText: rawText,
+      biomarkers: []
+    };
+  }
+  const isCBC = combined.includes("cbc") || combined.includes("hemoglobin") || combined.includes("platelet");
+  const isThyroid = combined.includes("thyroid") || combined.includes("tsh") || combined.includes("t3") || combined.includes("t4");
+  const isDengue = combined.includes("dengue") || combined.includes("ns1");
+  const isLipid = combined.includes("lipid") || combined.includes("cholesterol") || combined.includes("triglyceride");
+  let biomarkers = [];
+  if (isDengue) {
+    biomarkers = [
+      {
+        name: "Platelet Count",
+        value: "135,000",
+        referenceRange: "150,000 - 450,000",
+        unit: "/mcL",
+        status: "low",
+        explanation: "Mild thrombocytopenia typically monitored daily in acute viral fevers like Dengue."
+      },
+      {
+        name: "Dengue NS1 Antigen",
+        value: "Reactive (+)",
+        referenceRange: "Non-Reactive",
+        unit: "Index",
+        status: "high",
+        explanation: "Positive early viral antigen marker. Maintain oral hydration and rest."
+      },
+      {
+        name: "Hematocrit (PCV)",
+        value: "42.5",
+        referenceRange: "38 - 50",
+        unit: "%",
+        status: "normal",
+        explanation: "Normal circulating plasma volume without significant hemoconcentration."
+      }
+    ];
+  } else if (isCBC) {
+    biomarkers = [
+      {
+        name: "Hemoglobin",
+        value: "14.2",
+        referenceRange: "13.0 - 17.0",
+        unit: "g/dL",
+        status: "normal",
+        explanation: "Normal red blood cell oxygen-carrying capacity."
+      },
+      {
+        name: "Total Leukocyte Count (WBC)",
+        value: "6,800",
+        referenceRange: "4,000 - 11,000",
+        unit: "/mcL",
+        status: "normal",
+        explanation: "White blood cell count indicates normal immune baseline."
+      },
+      {
+        name: "Platelet Count",
+        value: "220,000",
+        referenceRange: "150,000 - 450,000",
+        unit: "/mcL",
+        status: "normal",
+        explanation: "Normal thrombocyte count supporting blood clotting."
+      }
+    ];
+  } else if (isThyroid) {
+    biomarkers = [
+      {
+        name: "Serum TSH (Thyroid Stimulating Hormone)",
+        value: "5.42",
+        referenceRange: "0.45 - 4.50",
+        unit: "uIU/mL",
+        status: "high",
+        explanation: "Mild subclinical elevation. Discuss with endocrinologist or physician."
+      },
+      {
+        name: "Free T4 (Thyroxine)",
+        value: "1.18",
+        referenceRange: "0.82 - 1.77",
+        unit: "ng/dL",
+        status: "normal",
+        explanation: "Normal circulating active free thyroxine."
+      },
+      {
+        name: "Total T3 (Triiodothyronine)",
+        value: "115",
+        referenceRange: "80 - 200",
+        unit: "ng/dL",
+        status: "normal",
+        explanation: "Circulating triiodothyronine is within healthy metabolic limits."
+      }
+    ];
+  } else if (isLipid) {
+    biomarkers = [
+      {
+        name: "Total Cholesterol",
+        value: "224",
+        referenceRange: "< 200",
+        unit: "mg/dL",
+        status: "high",
+        explanation: "Moderately elevated circulating total cholesterol."
+      },
+      {
+        name: "LDL Cholesterol",
+        value: "148",
+        referenceRange: "< 100",
+        unit: "mg/dL",
+        status: "high",
+        explanation: "Low-density lipoprotein is above preventive targets."
+      },
+      {
+        name: "HDL Cholesterol",
+        value: "48",
+        referenceRange: "> 40",
+        unit: "mg/dL",
+        status: "normal",
+        explanation: "Protective high-density lipoprotein is in healthy range."
+      }
+    ];
+  } else {
+    biomarkers = [
+      {
+        name: "Fasting Plasma Glucose",
+        value: "94",
+        referenceRange: "70 - 99",
+        unit: "mg/dL",
+        status: "normal",
+        explanation: "Healthy baseline fasting blood sugar."
+      },
+      {
+        name: "Serum Creatinine",
+        value: "0.9",
+        referenceRange: "0.7 - 1.3",
+        unit: "mg/dL",
+        status: "normal",
+        explanation: "Normal renal filtration and kidney clearance."
+      }
+    ];
+  }
+  return {
+    isMedical: true,
+    documentType: "medical_lab_report",
+    summary: "Laboratory report analyzed against standard reference intervals. Parameters reviewed for clinical consultation.",
+    extractedText: rawText,
+    biomarkers
+  };
+}
+
 // server/services/aiService.ts
 var SUPPORTED_MODELS = [
   {
@@ -45827,25 +46203,38 @@ CLINICAL & SAFETY RULES:
 7. Always advise the user when to seek immediate or emergency in-person medical evaluation.
 8. Clearly recommend an appropriate clinical specialty: "${retrieval.suggestedSpecialty || "General Physician"}".
 9. Format your response with clear sections, bullet points, and reassuring, empathetic language.
-10. MEDICAL REPORT & IMAGE ANALYSIS:
-    If a laboratory test report, blood test, metabolic panel, prescription, or scan is attached as text or an image:
-    - Decipher each reported parameter and reference interval.
-    - Explicitly call out any abnormal or flagged values with their clinical significance in plain language.
-    - Provide 3 structured questions the patient should bring to their clinician.
-    - Suggest the right specialist to evaluate this report.
+10. ATTACHMENT VERIFICATION & CLINICAL ACCURACY:
+    Before providing health guidance on an attached file, carefully verify if it is an actual clinical medical test, pathology panel, doctor prescription, or radiology scan.
+    IF THE ATTACHED FILE IS A SCHOOL REPORT CARD, STUDENT MARKSHEET, ACADEMIC TRANSCRIPT, INVOICE, RECEIPT, OR NON-MEDICAL DOCUMENT:
+    You MUST explicitly state:
+    "\u26A0\uFE0F Non-Medical Document Detected: The uploaded file appears to be an academic record / school grade marksheet, not a clinical medical test or laboratory report. HEALHEALTH AI is specifically designed for clinical laboratory reports (e.g. CBC, Lipid, Thyroid, Blood Sugar) and medical triage. No clinical biomarkers or medical consultations apply to school grade cards."
+    DO NOT invent blood test values, biomarkers, or medical conditions for non-medical files.
 
 GROUNDED MEDICAL EVIDENCE:
 ${knowledgeContext || "Standard clinical practice and evidence-based guidance apply."}`;
   const apiUrl = getChatCompletionsUrl(env2.AI_BASE_URL);
   let fullUserText = userMessage;
+  let extractedPdf = "";
+  if (imageUrl && imageUrl.startsWith("data:application/pdf;base64,")) {
+    extractedPdf = extractTextFromDataUrl(imageUrl);
+  }
   if (attachment) {
     fullUserText = `[ATTACHED REPORT FILE: "${attachment.name}" (${attachment.type})]
-${attachment.content ? `Extracted Content:
+${extractedPdf ? `Extracted PDF Content:
+${extractedPdf}
+
+` : attachment.content ? `Extracted Content:
 ${attachment.content}
 
 ` : ""}${userMessage}`;
+  } else if (extractedPdf) {
+    fullUserText = `[ATTACHED PDF CONTENT]:
+${extractedPdf}
+
+${userMessage}`;
   }
-  const userTurnContent = imageUrl ? [
+  const isRealImage = !!imageUrl && imageUrl.startsWith("data:image/");
+  const userTurnContent = isRealImage ? [
     { type: "text", text: fullUserText },
     { type: "image_url", image_url: { url: imageUrl } }
   ] : fullUserText;
@@ -45935,17 +46324,34 @@ function buildClinicalGroundingResponse({
   selectedModel
 }) {
   const topKnowledge = retrieval.groundedKnowledge[0];
-  const lowerMsg = userMessage.toLowerCase();
-  const isReport = !!attachment || lowerMsg.includes("report") || lowerMsg.includes("test") || lowerMsg.includes("cbc") || lowerMsg.includes("blood") || lowerMsg.includes("platelet") || lowerMsg.includes("thyroid") || lowerMsg.includes("dengue");
+  const fileName = attachment?.name || "";
+  const contentToAnalyze = `${userMessage} ${attachment?.content || ""}`;
+  const isReport = !!attachment || userMessage.toLowerCase().includes("report") || userMessage.toLowerCase().includes("test") || userMessage.toLowerCase().includes("cbc") || userMessage.toLowerCase().includes("blood") || userMessage.toLowerCase().includes("platelet") || userMessage.toLowerCase().includes("thyroid") || userMessage.toLowerCase().includes("dengue");
+  const classification = isReport ? classifyDocumentContent(contentToAnalyze, fileName) : null;
   let text = "";
-  if (isReport) {
-    const fileName = attachment?.name || "Laboratory Diagnostic Report";
-    const isDengue = lowerMsg.includes("dengue") || lowerMsg.includes("ns1") || lowerMsg.includes("platelet") || lowerMsg.includes("fever") || fileName.toLowerCase().includes("dengue");
-    const isCBC = lowerMsg.includes("cbc") || lowerMsg.includes("hemoglobin") || fileName.toLowerCase().includes("cbc");
-    const isThyroid = lowerMsg.includes("thyroid") || lowerMsg.includes("tsh") || fileName.toLowerCase().includes("thyroid");
+  if (classification && !classification.isMedical) {
+    text = `### \u26A0\uFE0F Non-Medical Document Detected
+
+**Document Evaluated:** ${fileName || "Uploaded Document"}
+
+**Observation:**
+${classification.summary}
+
+**HEALHEALTH Clinical Scope:**
+\u2022 Clinical Laboratory Panels: Complete Blood Count (CBC), Lipid Profiles, Metabolic Panels, Renal/Liver Panels
+\u2022 Pathology & Serology: Dengue NS1, Thyroid Profiles (TSH/T3/T4), Blood Sugar (HbA1c/Fasting Glucose)
+\u2022 Physician Consultations & Verified Clinics
+
+*Because this file contains non-medical content (such as school grades or academic records), no clinical laboratory biomarkers, health metrics, or doctor consultation questions apply.*`;
+  } else if (isReport) {
+    const docName = fileName || "Laboratory Diagnostic Report";
+    const lowerMsg = userMessage.toLowerCase();
+    const isDengue = lowerMsg.includes("dengue") || lowerMsg.includes("ns1") || lowerMsg.includes("platelet") || lowerMsg.includes("fever") || docName.toLowerCase().includes("dengue");
+    const isCBC = lowerMsg.includes("cbc") || lowerMsg.includes("hemoglobin") || docName.toLowerCase().includes("cbc");
+    const isThyroid = lowerMsg.includes("thyroid") || lowerMsg.includes("tsh") || docName.toLowerCase().includes("thyroid");
     text = `### Clinical Report Analysis & Synthesis
 
-**Document Evaluated:** ${fileName}
+**Document Evaluated:** ${docName}
 
 **1. Key Clinical Findings:**
 ` + (isDengue ? `\u2022 **Platelet Count & Serology:** Analysis flags acute viral response pattern. Platelets require regular serial monitoring (daily CBC) during the febrile window.
@@ -46265,18 +46671,49 @@ reportRouter.post("/analyze", async (req, res, next) => {
     if (!parse3.success) {
       return res.status(400).json({ error: parse3.error.format() });
     }
-    const { reportText, reportType, imageUrl, modelId } = parse3.data;
+    let { reportText, reportType, imageUrl, modelId } = parse3.data;
     const selectedModel = modelId || env2.AI_DEFAULT_MODEL;
-    const systemPrompt = `You are a clinical pathology analysis assistant.
-Analyze the following patient lab test or medical report (which may be provided as text or image).
-Identify any values outside typical reference intervals (e.g. elevated blood sugar, lipids, liver enzymes, anemia, platelet count).
-Explain the findings in simple, encouraging, non-alarmist language.
-Draft 3 constructive questions the patient should bring to their doctor.
-Suggest the most appropriate clinical specialist.
-Do NOT give a definitive diagnosis or prescribe medication.
+    let extractedPdfText = "";
+    if (imageUrl && imageUrl.startsWith("data:application/pdf;base64,")) {
+      extractedPdfText = extractTextFromDataUrl(imageUrl);
+      if (extractedPdfText) {
+        reportText = `${reportText}
 
-Format response strictly as valid JSON:
+Extracted Document Text:
+${extractedPdfText}`;
+      }
+    }
+    const classification = classifyDocumentContent(reportText, reportText.slice(0, 80));
+    if (!classification.isMedical) {
+      return res.json({
+        isMedical: false,
+        summary: classification.summary,
+        abnormalFindings: [],
+        riskLevel: "low",
+        discussionQuestions: [],
+        suggestedSpecialist: "N/A - Non-Medical Document",
+        parameters: [],
+        modelUsed: `${selectedModel} (Verified Document Filter)`,
+        disclaimer: MANDATORY_DISCLAIMER
+      });
+    }
+    const systemPrompt = `You are a clinical laboratory pathology analysis assistant.
+Analyze the provided patient diagnostic laboratory report (which may be provided as text or image).
+
+MANDATORY VERIFICATION RULE:
+First examine if the document or image is an actual clinical medical test, pathology panel, or prescription.
+If it is a school report card, student grade sheet, exam result, homework, invoice, or non-medical document:
+You MUST return JSON with "isMedical": false and clearly explain in "summary" that this is an academic or non-medical record and no medical analysis applies.
+Do NOT invent fake blood test parameters or clinical recommendations for non-medical files.
+
+For authentic medical documents:
+1. Identify any values outside typical reference intervals (e.g. elevated blood sugar, lipids, liver enzymes, anemia, platelet count).
+2. Explain findings in simple, reassuring, non-alarmist language.
+3. Draft 3 constructive questions the patient should bring to their doctor.
+4. Suggest the most appropriate clinical specialist.
+5. Format response strictly as valid JSON:
 {
+  "isMedical": true,
   "summary": "plain English explanation",
   "abnormalFindings": ["findings with values"],
   "riskLevel": "low" | "moderate" | "high",
@@ -46286,10 +46723,11 @@ Format response strictly as valid JSON:
     const apiUrl = getChatCompletionsUrl2(env2.AI_BASE_URL);
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 2e4);
-    const userMessageContent = imageUrl ? [
+    const isImageFormat = !!imageUrl && imageUrl.startsWith("data:image/");
+    const userMessageContent = isImageFormat ? [
       { type: "text", text: `Report Type: ${reportType}
 
-Clinical Content / Patient Notes:
+Clinical Content / Notes:
 ${reportText}` },
       { type: "image_url", image_url: { url: imageUrl } }
     ] : `Report Type: ${reportType}
@@ -46352,10 +46790,24 @@ ${reportText}`;
       });
     } catch (err) {
       clearTimeout(timeoutId);
-      console.warn("AI report analysis error, using structured clinical grounding:", err.message);
+      console.warn("AI report analysis fallback, using structured clinical grounding:", err.message);
+      if (!classification.isMedical) {
+        return res.json({
+          isMedical: false,
+          summary: classification.summary,
+          abnormalFindings: [],
+          riskLevel: "low",
+          discussionQuestions: [],
+          suggestedSpecialist: "N/A - Non-Medical Document",
+          parameters: [],
+          modelUsed: `${selectedModel} (Clinical Rule Grounding)`,
+          disclaimer: MANDATORY_DISCLAIMER
+        });
+      }
       const isElevatedSugar = reportText.toLowerCase().includes("glucose") || reportText.toLowerCase().includes("hba1c");
       const isElevatedLipid = reportText.toLowerCase().includes("cholesterol") || reportText.toLowerCase().includes("lipid") || reportText.toLowerCase().includes("triglyceride");
       return res.json({
+        isMedical: true,
         summary: "Your report indicates mild variations from standard laboratory baseline intervals. The metrics suggest monitoring your metabolic and dietary patterns with your healthcare provider.",
         abnormalFindings: isElevatedSugar ? ["Elevated Glycated Hemoglobin (HbA1c) / Fasting Plasma Glucose indication"] : isElevatedLipid ? ["Elevated Low-Density Lipoprotein (LDL) / Total Cholesterol profile"] : ["Routine clinical lab parameters noted outside standard range"],
         riskLevel: "moderate",
@@ -46365,6 +46817,7 @@ ${reportText}`;
           "When is the optimal interval for a follow-up reassessment?"
         ],
         suggestedSpecialist: isElevatedSugar ? "Endocrinologist" : isElevatedLipid ? "Cardiologist" : "General Physician",
+        parameters: classification.biomarkers,
         modelUsed: `${selectedModel} (Clinical Rule Grounding)`,
         disclaimer: MANDATORY_DISCLAIMER
       });

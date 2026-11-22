@@ -1,6 +1,7 @@
 import { env } from '../config/env';
 import { RetrievalResult } from './retrievalService';
 import { SafetyEvaluation, MANDATORY_DISCLAIMER } from './safetyService';
+import { classifyDocumentContent, extractTextFromDataUrl } from './documentParser';
 
 export interface ChatMessage {
   role: 'user' | 'assistant' | 'system';
@@ -149,12 +150,12 @@ CLINICAL & SAFETY RULES:
 7. Always advise the user when to seek immediate or emergency in-person medical evaluation.
 8. Clearly recommend an appropriate clinical specialty: "${retrieval.suggestedSpecialty || 'General Physician'}".
 9. Format your response with clear sections, bullet points, and reassuring, empathetic language.
-10. MEDICAL REPORT & IMAGE ANALYSIS:
-    If a laboratory test report, blood test, metabolic panel, prescription, or scan is attached as text or an image:
-    - Decipher each reported parameter and reference interval.
-    - Explicitly call out any abnormal or flagged values with their clinical significance in plain language.
-    - Provide 3 structured questions the patient should bring to their clinician.
-    - Suggest the right specialist to evaluate this report.
+10. ATTACHMENT VERIFICATION & CLINICAL ACCURACY:
+    Before providing health guidance on an attached file, carefully verify if it is an actual clinical medical test, pathology panel, doctor prescription, or radiology scan.
+    IF THE ATTACHED FILE IS A SCHOOL REPORT CARD, STUDENT MARKSHEET, ACADEMIC TRANSCRIPT, INVOICE, RECEIPT, OR NON-MEDICAL DOCUMENT:
+    You MUST explicitly state:
+    "⚠️ Non-Medical Document Detected: The uploaded file appears to be an academic record / school grade marksheet, not a clinical medical test or laboratory report. HEALHEALTH AI is specifically designed for clinical laboratory reports (e.g. CBC, Lipid, Thyroid, Blood Sugar) and medical triage. No clinical biomarkers or medical consultations apply to school grade cards."
+    DO NOT invent blood test values, biomarkers, or medical conditions for non-medical files.
 
 GROUNDED MEDICAL EVIDENCE:
 ${knowledgeContext || 'Standard clinical practice and evidence-based guidance apply.'}`;
@@ -162,13 +163,23 @@ ${knowledgeContext || 'Standard clinical practice and evidence-based guidance ap
   const apiUrl = getChatCompletionsUrl(env.AI_BASE_URL);
 
   let fullUserText = userMessage;
-  if (attachment) {
-    fullUserText = `[ATTACHED REPORT FILE: "${attachment.name}" (${attachment.type})]\n${
-      attachment.content ? `Extracted Content:\n${attachment.content}\n\n` : ''
-    }${userMessage}`;
+
+  // Extract text if a PDF base64 is passed in imageUrl
+  let extractedPdf = '';
+  if (imageUrl && imageUrl.startsWith('data:application/pdf;base64,')) {
+    extractedPdf = extractTextFromDataUrl(imageUrl);
   }
 
-  const userTurnContent: any = imageUrl
+  if (attachment) {
+    fullUserText = `[ATTACHED REPORT FILE: "${attachment.name}" (${attachment.type})]\n${
+      extractedPdf ? `Extracted PDF Content:\n${extractedPdf}\n\n` : attachment.content ? `Extracted Content:\n${attachment.content}\n\n` : ''
+    }${userMessage}`;
+  } else if (extractedPdf) {
+    fullUserText = `[ATTACHED PDF CONTENT]:\n${extractedPdf}\n\n${userMessage}`;
+  }
+
+  const isRealImage = !!imageUrl && imageUrl.startsWith('data:image/');
+  const userTurnContent: any = isRealImage
     ? [
         { type: 'text', text: fullUserText },
         { type: 'image_url', image_url: { url: imageUrl } },
@@ -293,38 +304,58 @@ function buildClinicalGroundingResponse({
   selectedModel: string;
 }) {
   const topKnowledge = retrieval.groundedKnowledge[0];
-  const lowerMsg = userMessage.toLowerCase();
+  const fileName = attachment?.name || '';
+  const contentToAnalyze = `${userMessage} ${attachment?.content || ''}`;
+
+  // Classify document if attachment or report keywords are present
   const isReport =
     !!attachment ||
-    lowerMsg.includes('report') ||
-    lowerMsg.includes('test') ||
-    lowerMsg.includes('cbc') ||
-    lowerMsg.includes('blood') ||
-    lowerMsg.includes('platelet') ||
-    lowerMsg.includes('thyroid') ||
-    lowerMsg.includes('dengue');
+    userMessage.toLowerCase().includes('report') ||
+    userMessage.toLowerCase().includes('test') ||
+    userMessage.toLowerCase().includes('cbc') ||
+    userMessage.toLowerCase().includes('blood') ||
+    userMessage.toLowerCase().includes('platelet') ||
+    userMessage.toLowerCase().includes('thyroid') ||
+    userMessage.toLowerCase().includes('dengue');
+
+  const classification = isReport
+    ? classifyDocumentContent(contentToAnalyze, fileName)
+    : null;
 
   let text = '';
-  if (isReport) {
-    const fileName = attachment?.name || 'Laboratory Diagnostic Report';
+
+  if (classification && !classification.isMedical) {
+    text =
+      `### ⚠️ Non-Medical Document Detected\n\n` +
+      `**Document Evaluated:** ${fileName || 'Uploaded Document'}\n\n` +
+      `**Observation:**\n` +
+      `${classification.summary}\n\n` +
+      `**HEALHEALTH Clinical Scope:**\n` +
+      `• Clinical Laboratory Panels: Complete Blood Count (CBC), Lipid Profiles, Metabolic Panels, Renal/Liver Panels\n` +
+      `• Pathology & Serology: Dengue NS1, Thyroid Profiles (TSH/T3/T4), Blood Sugar (HbA1c/Fasting Glucose)\n` +
+      `• Physician Consultations & Verified Clinics\n\n` +
+      `*Because this file contains non-medical content (such as school grades or academic records), no clinical laboratory biomarkers, health metrics, or doctor consultation questions apply.*`;
+  } else if (isReport) {
+    const docName = fileName || 'Laboratory Diagnostic Report';
+    const lowerMsg = userMessage.toLowerCase();
     const isDengue =
       lowerMsg.includes('dengue') ||
       lowerMsg.includes('ns1') ||
       lowerMsg.includes('platelet') ||
       lowerMsg.includes('fever') ||
-      fileName.toLowerCase().includes('dengue');
+      docName.toLowerCase().includes('dengue');
     const isCBC =
       lowerMsg.includes('cbc') ||
       lowerMsg.includes('hemoglobin') ||
-      fileName.toLowerCase().includes('cbc');
+      docName.toLowerCase().includes('cbc');
     const isThyroid =
       lowerMsg.includes('thyroid') ||
       lowerMsg.includes('tsh') ||
-      fileName.toLowerCase().includes('thyroid');
+      docName.toLowerCase().includes('thyroid');
 
     text =
       `### Clinical Report Analysis & Synthesis\n\n` +
-      `**Document Evaluated:** ${fileName}\n\n` +
+      `**Document Evaluated:** ${docName}\n\n` +
       `**1. Key Clinical Findings:**\n` +
       (isDengue
         ? `• **Platelet Count & Serology:** Analysis flags acute viral response pattern. Platelets require regular serial monitoring (daily CBC) during the febrile window.\n• **Hematocrit (PCV):** Stable circulating volume without critical plasma leakage indicators.\n`

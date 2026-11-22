@@ -23,6 +23,7 @@ import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
 import { MedicalReport } from '../types';
 import { downloadMedicalReportPdf, printMedicalReport } from '../utils/pdfGenerator';
+import { classifyDocument } from '../utils/documentClassifier';
 
 export const ReportAnalyzerPage: React.FC = () => {
   const { reports, addReport } = useApp();
@@ -42,34 +43,13 @@ export const ReportAnalyzerPage: React.FC = () => {
     setProcessingStage('Reading document OCR & visual layers...');
 
     const safeName = fileName || 'medical_report.pdf';
-    const lowerName = safeName.toLowerCase();
-    const isCBC = lowerName.includes('cbc') || lowerName.includes('blood') || lowerName.includes('count') || lowerName.includes('hemoglobin');
-    const isThyroid = lowerName.includes('thyroid') || lowerName.includes('tsh') || lowerName.includes('t3') || lowerName.includes('t4');
-    const isDengue = lowerName.includes('dengue') || lowerName.includes('ns1') || lowerName.includes('platelet') || lowerName.includes('fever');
+    const classification = classifyDocument(safeName, customTitle || '');
 
-    const title = customTitle || (
-      isCBC
-        ? 'Complete Blood Count (CBC) with Platelets'
-        : isThyroid
-        ? 'Comprehensive Thyroid & Metabolic Profile'
-        : isDengue
-        ? 'Acute Febrile & Dengue Serology Panel'
-        : safeName.replace(/\.[^/.]+$/, '').replace(/[_-]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()) || 'Comprehensive Laboratory Pathology Panel'
-    );
-
-    let aiSummary = isDengue
-      ? 'Serology analysis indicates acute viral pattern with borderline platelet count requiring daily hematocrit monitoring and supportive hydration.'
-      : isCBC
-      ? 'Hemoglobin and red cell indices are within expected baseline intervals. Platelet count and differential leukocyte distribution reflect normal bone marrow activity.'
-      : isThyroid
-      ? 'Serum TSH shows mild subclinical elevation with normal circulating free T4, suggesting early thyroid metabolic variation.'
-      : 'Hepatic and lipid metrics show mild elevation suggestive of metabolic strain, while renal function biomarkers remain within normal reference limits.';
-
-    let aiQuestions = [
-      'How significantly do these values depart from standard demographic baselines?',
-      'What specific dietary, hydration, or activity adjustments are advised?',
-      'When is the recommended interval for a follow-up assessment panel?',
-    ];
+    let title = customTitle || classification.title;
+    let aiSummary = classification.summary;
+    let aiQuestions = classification.questionsForDoctor;
+    let reportParams = classification.parameters;
+    let reportCategory = classification.category;
 
     // Progress step timers
     const t1 = setTimeout(() => {
@@ -86,7 +66,7 @@ export const ReportAnalyzerPage: React.FC = () => {
       const { api } = await import('../services/api');
       const reportPromise = api.analyzeReport({
         reportText: `Patient Uploaded Document: ${safeName} (${fileSize})\nTitle: ${title}`,
-        reportType: isDengue ? 'Serology / Infectious Disease' : isCBC ? 'Hematology / CBC' : 'Pathology / Biochemistry',
+        reportType: classification.isMedical ? reportCategory : 'Non-Medical Document',
         imageUrl: dataUrl,
       });
 
@@ -95,11 +75,15 @@ export const ReportAnalyzerPage: React.FC = () => {
       );
 
       const analyzed = (await Promise.race([reportPromise, timeoutPromise])) as any;
-      if (analyzed?.summary) {
+      if (analyzed?.isMedical === false) {
         aiSummary = analyzed.summary;
-      }
-      if (analyzed?.discussionQuestions && analyzed.discussionQuestions.length > 0) {
-        aiQuestions = analyzed.discussionQuestions;
+        reportParams = [];
+        aiQuestions = [];
+      } else if (analyzed?.summary) {
+        aiSummary = analyzed.summary;
+        if (analyzed?.discussionQuestions && analyzed.discussionQuestions.length > 0) {
+          aiQuestions = analyzed.discussionQuestions;
+        }
       }
     } catch (err) {
       console.warn('Backend report analysis fallback:', err);
@@ -109,96 +93,15 @@ export const ReportAnalyzerPage: React.FC = () => {
       setUploadProgress(100);
       setProcessingStage('Report analysis complete!');
 
-      const defaultParams = isDengue
-        ? [
-            {
-              name: 'Platelet Count',
-              value: '135,000',
-              referenceRange: '150,000 - 450,000',
-              unit: '/mcL',
-              status: 'low' as const,
-              explanation: 'Mild thrombocytopenia often associated with acute viral infections such as Dengue or seasonal fever.',
-            },
-            {
-              name: 'Dengue NS1 Antigen',
-              value: 'Reactive (+)',
-              referenceRange: 'Non-Reactive',
-              unit: 'Index',
-              status: 'high' as const,
-              explanation: 'Early marker positive for dengue viral antigen. Maintain oral hydration.',
-            },
-            {
-              name: 'Hematocrit (PCV)',
-              value: '42.5',
-              referenceRange: '38 - 50',
-              unit: '%',
-              status: 'normal' as const,
-              explanation: 'Adequate circulating plasma volume without severe hemoconcentration.',
-            },
-          ]
-        : isCBC
-        ? [
-            {
-              name: 'Hemoglobin',
-              value: '14.2',
-              referenceRange: '13.0 - 17.0',
-              unit: 'g/dL',
-              status: 'normal' as const,
-              explanation: 'Healthy oxygen-carrying capacity in circulating red blood cells.',
-            },
-            {
-              name: 'Total Leukocyte Count (WBC)',
-              value: '6,800',
-              referenceRange: '4,000 - 11,000',
-              unit: '/mcL',
-              status: 'normal' as const,
-              explanation: 'Immune cell count indicates normal physiological defense without acute leukocytosis.',
-            },
-            {
-              name: 'Platelet Count',
-              value: '220,000',
-              referenceRange: '150,000 - 450,000',
-              unit: '/mcL',
-              status: 'normal' as const,
-              explanation: 'Normal clotting capability and thrombocyte count.',
-            },
-          ]
-        : [
-            {
-              name: 'SGPT / ALT',
-              value: '58',
-              referenceRange: '7 - 45',
-              unit: 'U/L',
-              status: 'high' as const,
-              explanation: 'Alanine aminotransferase is mildly elevated; often associated with metabolic hepatic stress.',
-            },
-            {
-              name: 'LDL Cholesterol',
-              value: '148',
-              referenceRange: '0 - 100',
-              unit: 'mg/dL',
-              status: 'high' as const,
-              explanation: 'Low-density lipoprotein is moderately elevated above primary preventive targets.',
-            },
-            {
-              name: 'Total Bilirubin',
-              value: '0.9',
-              referenceRange: '0.2 - 1.2',
-              unit: 'mg/dL',
-              status: 'normal' as const,
-              explanation: 'Normal hepatic clearance of red blood cell breakdown products.',
-            },
-          ];
-
       const created = addReport({
         title,
-        category: isDengue ? 'Serology' : isCBC ? 'Hematology' : 'Pathology',
+        category: reportCategory,
         uploadDate: new Date().toISOString().split('T')[0],
         fileSize: fileSize || '1.8 MB',
         fileName: safeName || 'lab_report_analyzed.pdf',
-        doctorName: 'Dr. Priya Kulkarni, MD',
+        doctorName: classification.isMedical ? 'Dr. Priya Kulkarni, MD' : 'HEALHEALTH Document Validator',
         summary: aiSummary,
-        parameters: defaultParams,
+        parameters: reportParams,
         questionsForDoctor: aiQuestions,
         isDemo: true,
       });
@@ -436,74 +339,88 @@ export const ReportAnalyzerPage: React.FC = () => {
                 <p className="text-xs text-slate-700 leading-relaxed">{activeReport.summary}</p>
               </div>
 
-              {/* Biomarkers Table */}
-              <div className="space-y-3">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">
-                  Biomarkers & Laboratory Intervals
-                </h3>
+              {/* Biomarkers Table or Non-Medical Notice */}
+              {activeReport.parameters && activeReport.parameters.length > 0 ? (
+                <div className="space-y-3">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                    Biomarkers & Laboratory Intervals
+                  </h3>
 
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs border border-slate-200 rounded-xl overflow-hidden">
-                    <thead className="bg-slate-50 text-slate-700 font-bold border-b border-slate-200">
-                      <tr>
-                        <th className="p-3">Biomarker</th>
-                        <th className="p-3">Your Result</th>
-                        <th className="p-3">Reference Range</th>
-                        <th className="p-3">Status</th>
-                        <th className="p-3">Explanation</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                      {activeReport.parameters.map((param) => (
-                        <tr key={param.name} className="hover:bg-slate-50/50">
-                          <td className="p-3 font-semibold text-slate-900">{param.name}</td>
-                          <td className="p-3 font-bold text-slate-900">
-                            {param.value} <span className="font-normal text-slate-500 text-[10px]">{param.unit}</span>
-                          </td>
-                          <td className="p-3 text-slate-600">{param.referenceRange}</td>
-                          <td className="p-3">
-                            <span
-                              className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
-                                param.status === 'normal'
-                                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                                  : param.status === 'critical'
-                                  ? 'bg-rose-100 text-rose-800 border border-rose-300'
-                                  : 'bg-amber-50 text-amber-700 border border-amber-200'
-                              }`}
-                            >
-                              {param.status}
-                            </span>
-                          </td>
-                          <td className="p-3 text-slate-600 max-w-xs">{param.explanation}</td>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs border border-slate-200 rounded-xl overflow-hidden">
+                      <thead className="bg-slate-50 text-slate-700 font-bold border-b border-slate-200">
+                        <tr>
+                          <th className="p-3">Biomarker</th>
+                          <th className="p-3">Your Result</th>
+                          <th className="p-3">Reference Range</th>
+                          <th className="p-3">Status</th>
+                          <th className="p-3">Explanation</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {activeReport.parameters.map((param) => (
+                          <tr key={param.name} className="hover:bg-slate-50/50">
+                            <td className="p-3 font-semibold text-slate-900">{param.name}</td>
+                            <td className="p-3 font-bold text-slate-900">
+                              {param.value} <span className="font-normal text-slate-500 text-[10px]">{param.unit}</span>
+                            </td>
+                            <td className="p-3 text-slate-600">{param.referenceRange}</td>
+                            <td className="p-3">
+                              <span
+                                className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
+                                  param.status === 'normal'
+                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                    : param.status === 'critical'
+                                    ? 'bg-rose-100 text-rose-800 border border-rose-300'
+                                    : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                }`}
+                              >
+                                {param.status}
+                              </span>
+                            </td>
+                            <td className="p-3 text-slate-600 max-w-xs">{param.explanation}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div className="p-5 bg-amber-50/80 border border-amber-200 rounded-xl space-y-2.5">
+                  <div className="flex items-center gap-2 text-amber-900 font-bold text-xs">
+                    <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+                    <span>Non-Medical Document Classification</span>
+                  </div>
+                  <p className="text-xs text-amber-900/80 leading-relaxed">
+                    No clinical pathology parameters or health biomarkers were extracted. HEALHEALTH AI Report Analyzer only processes diagnostic clinical panels (such as Complete Blood Counts, Lipid & Metabolic Profiles, Thyroid Panels, and Dengue Serology). Academic grades, school transcripts, and financial documents cannot be analyzed for clinical metrics.
+                  </p>
+                </div>
+              )}
 
               {/* Doctor Discussion Points */}
-              <div className="space-y-3 pt-2">
-                <div className="flex items-center gap-2">
-                  <HelpCircle className="w-4 h-4 text-teal-600" />
-                  <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
-                    Questions for Your Doctor
-                  </h3>
+              {activeReport.questionsForDoctor && activeReport.questionsForDoctor.length > 0 && (
+                <div className="space-y-3 pt-2">
+                  <div className="flex items-center gap-2">
+                    <HelpCircle className="w-4 h-4 text-teal-600" />
+                    <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+                      Questions for Your Doctor
+                    </h3>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {activeReport.questionsForDoctor.map((q, idx) => (
+                      <div
+                        key={idx}
+                        className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs text-slate-700 flex items-start gap-2"
+                      >
+                        <span className="w-5 h-5 rounded-full bg-teal-100 text-teal-700 font-bold flex items-center justify-center shrink-0 text-[10px]">
+                          {idx + 1}
+                        </span>
+                        <span>{q}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {activeReport.questionsForDoctor.map((q, idx) => (
-                    <div
-                      key={idx}
-                      className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs text-slate-700 flex items-start gap-2"
-                    >
-                      <span className="w-5 h-5 rounded-full bg-teal-100 text-teal-700 font-bold flex items-center justify-center shrink-0 text-[10px]">
-                        {idx + 1}
-                      </span>
-                      <span>{q}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
+              )}
 
               {/* Educational Disclaimer */}
               <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 flex items-start gap-2.5 text-[11px] text-slate-500 leading-relaxed">
