@@ -24,6 +24,7 @@ import { Badge } from '../components/ui/Badge';
 import { MedicalReport } from '../types';
 import { downloadMedicalReportPdf, printMedicalReport } from '../utils/pdfGenerator';
 import { classifyDocument } from '../utils/documentClassifier';
+import { parsePdfFile } from '../utils/pdfExtractor';
 
 export const ReportAnalyzerPage: React.FC = () => {
   const { reports, addReport } = useApp();
@@ -37,13 +38,19 @@ export const ReportAnalyzerPage: React.FC = () => {
 
   const activeReport = reports.find((r) => r.id === selectedReportId) || reports[0];
 
-  const processReportUpload = async (fileName = 'medical_report.pdf', fileSize = '1.8 MB', dataUrl?: string, customTitle?: string) => {
+  const processReportUpload = async (
+    fileName = 'medical_report.pdf',
+    fileSize = '1.8 MB',
+    dataUrl?: string,
+    customTitle?: string,
+    extractedContent?: string
+  ) => {
     setIsUploading(true);
     setUploadProgress(20);
     setProcessingStage('Reading document OCR & visual layers...');
 
     const safeName = fileName || 'medical_report.pdf';
-    const classification = classifyDocument(safeName, customTitle || '');
+    const classification = classifyDocument(safeName, customTitle || extractedContent || '');
 
     let title = customTitle || classification.title;
     let aiSummary = classification.summary;
@@ -65,7 +72,9 @@ export const ReportAnalyzerPage: React.FC = () => {
     try {
       const { api } = await import('../services/api');
       const reportPromise = api.analyzeReport({
-        reportText: `Patient Uploaded Document: ${safeName} (${fileSize})\nTitle: ${title}`,
+        reportText: `Patient Uploaded Document: ${safeName} (${fileSize})\nTitle: ${title}${
+          extractedContent ? `\n\nExtracted Text:\n${extractedContent}` : ''
+        }`,
         reportType: classification.isMedical ? reportCategory : 'Non-Medical Document',
         imageUrl: dataUrl,
       });
@@ -119,20 +128,32 @@ export const ReportAnalyzerPage: React.FC = () => {
     }
   };
 
-  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileInputChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     const fileSizeFormatted = `${(file.size / (1024 * 1024)).toFixed(1)} MB`;
-    const reader = new FileReader();
 
-    if (file.type.startsWith('image/')) {
-      reader.onload = () => {
-        processReportUpload(file.name, fileSizeFormatted, reader.result as string);
-      };
-      reader.readAsDataURL(file);
+    if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
+      try {
+        const parsed = await parsePdfFile(file);
+        processReportUpload(
+          file.name,
+          fileSizeFormatted,
+          parsed.dataUrl,
+          undefined,
+          parsed.extractedText
+        );
+      } catch (err) {
+        console.warn('PDF parsing fallback:', err);
+        const reader = new FileReader();
+        reader.onload = () => {
+          processReportUpload(file.name, fileSizeFormatted, reader.result as string);
+        };
+        reader.readAsDataURL(file);
+      }
     } else {
-      // PDF or text file
+      const reader = new FileReader();
       reader.onload = () => {
         processReportUpload(file.name, fileSizeFormatted, reader.result as string);
       };
@@ -143,17 +164,36 @@ export const ReportAnalyzerPage: React.FC = () => {
     e.target.value = '';
   };
 
-  const handleDrop = (e: React.DragEvent) => {
+  const handleDrop = async (e: React.DragEvent) => {
     e.preventDefault();
     setDragActive(false);
     const file = e.dataTransfer.files?.[0];
     if (file) {
       const fileSizeFormatted = `${(file.size / (1024 * 1024)).toFixed(1)} MB`;
-      const reader = new FileReader();
-      reader.onload = () => {
-        processReportUpload(file.name, fileSizeFormatted, reader.result as string);
-      };
-      reader.readAsDataURL(file);
+      if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
+        try {
+          const parsed = await parsePdfFile(file);
+          processReportUpload(
+            file.name,
+            fileSizeFormatted,
+            parsed.dataUrl,
+            undefined,
+            parsed.extractedText
+          );
+        } catch {
+          const reader = new FileReader();
+          reader.onload = () => {
+            processReportUpload(file.name, fileSizeFormatted, reader.result as string);
+          };
+          reader.readAsDataURL(file);
+        }
+      } else {
+        const reader = new FileReader();
+        reader.onload = () => {
+          processReportUpload(file.name, fileSizeFormatted, reader.result as string);
+        };
+        reader.readAsDataURL(file);
+      }
     } else {
       processReportUpload('lipid_metabolic_analyzed.pdf', '1.8 MB');
     }

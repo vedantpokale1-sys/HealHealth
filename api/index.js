@@ -45719,9 +45719,66 @@ function retrieveMedicalContext(userQuery) {
 
 // server/services/documentParser.ts
 import zlib from "node:zlib";
+function extractFirstJpegFromPdf(pdfBuffer) {
+  const soi = Buffer.from([255, 216, 255]);
+  const eoi = Buffer.from([255, 217]);
+  let searchPos = 0;
+  while (searchPos < pdfBuffer.length) {
+    const startIdx = pdfBuffer.indexOf(soi, searchPos);
+    if (startIdx === -1) break;
+    const endIdx = pdfBuffer.indexOf(eoi, startIdx + 3);
+    if (endIdx === -1) break;
+    const jpegLength = endIdx - startIdx + 2;
+    if (jpegLength > 5e3) {
+      const jpegBuf = pdfBuffer.subarray(startIdx, endIdx + 2);
+      return `data:image/jpeg;base64,${jpegBuf.toString("base64")}`;
+    }
+    searchPos = endIdx + 2;
+  }
+  return null;
+}
+function cleanPdfString(raw) {
+  let s = raw.replace(/\\([0-7]{1,3})/g, (_, oct) => String.fromCharCode(parseInt(oct, 8)));
+  s = s.replace(/\\n/g, " ").replace(/\\r/g, " ").replace(/\\t/g, " ").replace(/\\([()\\])/g, "$1").trim();
+  if (!s || s.length < 2) return "";
+  const printableChars = s.replace(/[^a-zA-Z0-9\s.,:%/\-()]/g, "").length;
+  if (printableChars / s.length < 0.6) return "";
+  if (/^\/(Font|CID|Length|Type|Filter|Encoding|Widths|ToUnicode)/i.test(s)) return "";
+  return s;
+}
 function extractTextFromPdfBuffer(pdfBuffer) {
   const textPieces = [];
   const bin = pdfBuffer.toString("binary");
+  const parseStreamContent = (content) => {
+    const btRegex = /BT([\s\S]*?)ET/g;
+    let btMatch;
+    while ((btMatch = btRegex.exec(content)) !== null) {
+      const block = btMatch[1];
+      const tjRegex = /\(([\s\S]*?)\)\s*Tj/g;
+      let tjMatch;
+      while ((tjMatch = tjRegex.exec(block)) !== null) {
+        const clean = cleanPdfString(tjMatch[1]);
+        if (clean) textPieces.push(clean);
+      }
+      const arrRegex = /\[([\s\S]*?)\]\s*TJ/g;
+      let arrMatch;
+      while ((arrMatch = arrRegex.exec(block)) !== null) {
+        const inner = arrMatch[1];
+        const strRegex = /\(([\s\S]*?)\)/g;
+        let s;
+        while ((s = strRegex.exec(inner)) !== null) {
+          const clean = cleanPdfString(s[1]);
+          if (clean) textPieces.push(clean);
+        }
+      }
+      const quoteRegex = /\(([\s\S]*?)\)\s*'/g;
+      let qMatch;
+      while ((qMatch = quoteRegex.exec(block)) !== null) {
+        const clean = cleanPdfString(qMatch[1]);
+        if (clean) textPieces.push(clean);
+      }
+    }
+  };
   const streamRegex = /stream[\r\n]+([\s\S]*?)[\r\n]+endstream/g;
   let match;
   while ((match = streamRegex.exec(bin)) !== null) {
@@ -45733,46 +45790,32 @@ function extractTextFromPdfBuffer(pdfBuffer) {
       try {
         decompressed = zlib.inflateRawSync(rawStream).toString("utf-8");
       } catch {
-        decompressed = rawStream.toString("latin1");
+        continue;
       }
     }
-    const tjRegex = /\(([\s\S]*?)\)\s*Tj/g;
-    let tjMatch;
-    while ((tjMatch = tjRegex.exec(decompressed)) !== null) {
-      const clean = tjMatch[1].replace(/\\([()\\])/g, "$1").trim();
-      if (clean) textPieces.push(clean);
-    }
-    const arrRegex = /\[([\s\S]*?)\]\s*TJ/g;
-    let arrMatch;
-    while ((arrMatch = arrRegex.exec(decompressed)) !== null) {
-      const inner = arrMatch[1];
-      const strRegex = /\(([\s\S]*?)\)/g;
-      let s;
-      while ((s = strRegex.exec(inner)) !== null) {
-        const clean = s[1].replace(/\\([()\\])/g, "$1").trim();
-        if (clean) textPieces.push(clean);
-      }
+    if (decompressed.includes("BT") && decompressed.includes("ET")) {
+      parseStreamContent(decompressed);
     }
   }
-  const directTjRegex = /\(([\s\S]*?)\)\s*Tj/g;
-  while ((match = directTjRegex.exec(bin)) !== null) {
-    const clean = match[1].replace(/\\([()\\])/g, "$1").trim();
-    if (clean && !textPieces.includes(clean)) textPieces.push(clean);
+  if (textPieces.length === 0 && bin.includes("BT") && bin.includes("ET")) {
+    parseStreamContent(bin);
   }
   return textPieces.join(" ").replace(/\s+/g, " ").trim();
 }
-function extractTextFromDataUrl(dataUrl) {
-  if (!dataUrl) return "";
+function extractDataFromPdfDataUrl(dataUrl) {
+  if (!dataUrl) return { text: "" };
   if (dataUrl.startsWith("data:application/pdf;base64,")) {
     const b64 = dataUrl.replace(/^data:application\/pdf;base64,/, "");
     const buf = Buffer.from(b64, "base64");
-    return extractTextFromPdfBuffer(buf);
+    const text = extractTextFromPdfBuffer(buf);
+    const embeddedImage = extractFirstJpegFromPdf(buf) || void 0;
+    return { text, embeddedImage };
   }
   if (dataUrl.startsWith("data:text/")) {
     const b64 = dataUrl.split(",")[1];
-    return Buffer.from(b64, "base64").toString("utf-8");
+    return { text: Buffer.from(b64, "base64").toString("utf-8") };
   }
-  return "";
+  return { text: "" };
 }
 var SCHOOL_KEYWORDS = [
   "grade",
@@ -46214,29 +46257,34 @@ GROUNDED MEDICAL EVIDENCE:
 ${knowledgeContext || "Standard clinical practice and evidence-based guidance apply."}`;
   const apiUrl = getChatCompletionsUrl(env2.AI_BASE_URL);
   let fullUserText = userMessage;
-  let extractedPdf = "";
+  let extractedPdfText = "";
+  let activeVisionImageUrl = imageUrl;
   if (imageUrl && imageUrl.startsWith("data:application/pdf;base64,")) {
-    extractedPdf = extractTextFromDataUrl(imageUrl);
+    const pdfData = extractDataFromPdfDataUrl(imageUrl);
+    extractedPdfText = pdfData.text;
+    if (pdfData.embeddedImage) {
+      activeVisionImageUrl = pdfData.embeddedImage;
+    }
   }
   if (attachment) {
     fullUserText = `[ATTACHED REPORT FILE: "${attachment.name}" (${attachment.type})]
-${extractedPdf ? `Extracted PDF Content:
-${extractedPdf}
+${extractedPdfText ? `Extracted PDF Content:
+${extractedPdfText}
 
 ` : attachment.content ? `Extracted Content:
 ${attachment.content}
 
 ` : ""}${userMessage}`;
-  } else if (extractedPdf) {
+  } else if (extractedPdfText) {
     fullUserText = `[ATTACHED PDF CONTENT]:
-${extractedPdf}
+${extractedPdfText}
 
 ${userMessage}`;
   }
-  const isRealImage = !!imageUrl && imageUrl.startsWith("data:image/");
+  const isRealImage = !!activeVisionImageUrl && activeVisionImageUrl.startsWith("data:image/");
   const userTurnContent = isRealImage ? [
     { type: "text", text: fullUserText },
-    { type: "image_url", image_url: { url: imageUrl } }
+    { type: "image_url", image_url: { url: activeVisionImageUrl } }
   ] : fullUserText;
   const messages = [
     { role: "system", content: systemPrompt },
@@ -46674,8 +46722,13 @@ reportRouter.post("/analyze", async (req, res, next) => {
     let { reportText, reportType, imageUrl, modelId } = parse3.data;
     const selectedModel = modelId || env2.AI_DEFAULT_MODEL;
     let extractedPdfText = "";
+    let activeVisionImageUrl = imageUrl;
     if (imageUrl && imageUrl.startsWith("data:application/pdf;base64,")) {
-      extractedPdfText = extractTextFromDataUrl(imageUrl);
+      const pdfData = extractDataFromPdfDataUrl(imageUrl);
+      extractedPdfText = pdfData.text;
+      if (pdfData.embeddedImage) {
+        activeVisionImageUrl = pdfData.embeddedImage;
+      }
       if (extractedPdfText) {
         reportText = `${reportText}
 
@@ -46723,13 +46776,13 @@ For authentic medical documents:
     const apiUrl = getChatCompletionsUrl2(env2.AI_BASE_URL);
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 2e4);
-    const isImageFormat = !!imageUrl && imageUrl.startsWith("data:image/");
+    const isImageFormat = !!activeVisionImageUrl && activeVisionImageUrl.startsWith("data:image/");
     const userMessageContent = isImageFormat ? [
       { type: "text", text: `Report Type: ${reportType}
 
 Clinical Content / Notes:
 ${reportText}` },
-      { type: "image_url", image_url: { url: imageUrl } }
+      { type: "image_url", image_url: { url: activeVisionImageUrl } }
     ] : `Report Type: ${reportType}
 
 Content:

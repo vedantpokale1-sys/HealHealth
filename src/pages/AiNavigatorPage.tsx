@@ -31,6 +31,7 @@ import { Badge } from '../components/ui/Badge';
 import { ChatMessage, Doctor, HealthcareFacility, ExtendedChatMessage } from '../types';
 import { api, AiModelOption } from '../services/api';
 import { useApp } from '../context/AppContext';
+import { parsePdfFile } from '../utils/pdfExtractor';
 
 export const AiNavigatorPage: React.FC = () => {
   const location = useLocation();
@@ -108,7 +109,7 @@ export const AiNavigatorPage: React.FC = () => {
     'My recent report shows elevated LDL cholesterol. What questions should I ask my doctor?',
   ];
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -117,19 +118,47 @@ export const AiNavigatorPage: React.FC = () => {
         ? `${(file.size / (1024 * 1024)).toFixed(1)} MB`
         : `${Math.round(file.size / 1024)} KB`;
 
-    const isImage = file.type.startsWith('image/');
-    const reader = new FileReader();
+    if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
+      try {
+        const parsed = await parsePdfFile(file);
+        setAttachedFile({
+          name: file.name,
+          type: 'application/pdf',
+          size: fileSizeFormatted,
+          dataUrl: parsed.dataUrl,
+          content: parsed.extractedText || undefined,
+          isImage: parsed.isScannedImage,
+        });
+      } catch (err) {
+        console.warn('PDF parsing fallback to FileReader:', err);
+        const reader = new FileReader();
+        reader.onload = () => {
+          setAttachedFile({
+            name: file.name,
+            type: 'application/pdf',
+            size: fileSizeFormatted,
+            dataUrl: reader.result as string,
+            isImage: false,
+          });
+        };
+        reader.readAsDataURL(file);
+      }
+    } else {
+      const isImage = file.type.startsWith('image/');
+      const reader = new FileReader();
 
-    reader.onload = () => {
-      setAttachedFile({
-        name: file.name,
-        type: file.type || (isImage ? 'image/jpeg' : 'application/pdf'),
-        size: fileSizeFormatted,
-        dataUrl: reader.result as string,
-        isImage,
-      });
-    };
-    reader.readAsDataURL(file);
+      reader.onload = () => {
+        setAttachedFile({
+          name: file.name,
+          type: file.type || 'image/jpeg',
+          size: fileSizeFormatted,
+          dataUrl: reader.result as string,
+          isImage,
+        });
+      };
+      reader.readAsDataURL(file);
+    }
+
     e.target.value = '';
   };
 

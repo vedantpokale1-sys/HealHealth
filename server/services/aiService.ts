@@ -1,7 +1,7 @@
 import { env } from '../config/env';
 import { RetrievalResult } from './retrievalService';
 import { SafetyEvaluation, MANDATORY_DISCLAIMER } from './safetyService';
-import { classifyDocumentContent, extractTextFromDataUrl } from './documentParser';
+import { classifyDocumentContent, extractDataFromPdfDataUrl } from './documentParser';
 
 export interface ChatMessage {
   role: 'user' | 'assistant' | 'system';
@@ -164,25 +164,31 @@ ${knowledgeContext || 'Standard clinical practice and evidence-based guidance ap
 
   let fullUserText = userMessage;
 
-  // Extract text if a PDF base64 is passed in imageUrl
-  let extractedPdf = '';
+  // Extract clean text and any embedded scanned images if PDF base64 is passed
+  let extractedPdfText = '';
+  let activeVisionImageUrl = imageUrl;
+
   if (imageUrl && imageUrl.startsWith('data:application/pdf;base64,')) {
-    extractedPdf = extractTextFromDataUrl(imageUrl);
+    const pdfData = extractDataFromPdfDataUrl(imageUrl);
+    extractedPdfText = pdfData.text;
+    if (pdfData.embeddedImage) {
+      activeVisionImageUrl = pdfData.embeddedImage;
+    }
   }
 
   if (attachment) {
     fullUserText = `[ATTACHED REPORT FILE: "${attachment.name}" (${attachment.type})]\n${
-      extractedPdf ? `Extracted PDF Content:\n${extractedPdf}\n\n` : attachment.content ? `Extracted Content:\n${attachment.content}\n\n` : ''
+      extractedPdfText ? `Extracted PDF Content:\n${extractedPdfText}\n\n` : attachment.content ? `Extracted Content:\n${attachment.content}\n\n` : ''
     }${userMessage}`;
-  } else if (extractedPdf) {
-    fullUserText = `[ATTACHED PDF CONTENT]:\n${extractedPdf}\n\n${userMessage}`;
+  } else if (extractedPdfText) {
+    fullUserText = `[ATTACHED PDF CONTENT]:\n${extractedPdfText}\n\n${userMessage}`;
   }
 
-  const isRealImage = !!imageUrl && imageUrl.startsWith('data:image/');
+  const isRealImage = !!activeVisionImageUrl && activeVisionImageUrl.startsWith('data:image/');
   const userTurnContent: any = isRealImage
     ? [
         { type: 'text', text: fullUserText },
-        { type: 'image_url', image_url: { url: imageUrl } },
+        { type: 'image_url', image_url: { url: activeVisionImageUrl } },
       ]
     : fullUserText;
 

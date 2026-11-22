@@ -17,11 +17,105 @@ export interface DocumentClassification {
 }
 
 /**
+ * Extracts embedded JPEG images from a PDF buffer (very common in scanned medical laboratory reports).
+ */
+export function extractFirstJpegFromPdf(pdfBuffer: Buffer): string | null {
+  const soi = Buffer.from([0xff, 0xd8, 0xff]);
+  const eoi = Buffer.from([0xff, 0xd9]);
+
+  let searchPos = 0;
+  while (searchPos < pdfBuffer.length) {
+    const startIdx = pdfBuffer.indexOf(soi, searchPos);
+    if (startIdx === -1) break;
+
+    const endIdx = pdfBuffer.indexOf(eoi, startIdx + 3);
+    if (endIdx === -1) break;
+
+    const jpegLength = endIdx - startIdx + 2;
+    // Scanned document pages are typically larger than 5KB (skip small icons / thumbnails)
+    if (jpegLength > 5000) {
+      const jpegBuf = pdfBuffer.subarray(startIdx, endIdx + 2);
+      return `data:image/jpeg;base64,${jpegBuf.toString('base64')}`;
+    }
+
+    searchPos = endIdx + 2;
+  }
+
+  return null;
+}
+
+/**
+ * Cleans extracted PDF literal strings, resolving escapes and filtering binary junk.
+ */
+function cleanPdfString(raw: string): string {
+  // Decode octal escapes (\ooo)
+  let s = raw.replace(/\\([0-7]{1,3})/g, (_, oct) => String.fromCharCode(parseInt(oct, 8)));
+  // Decode standard escapes
+  s = s
+    .replace(/\\n/g, ' ')
+    .replace(/\\r/g, ' ')
+    .replace(/\\t/g, ' ')
+    .replace(/\\([()\\])/g, '$1')
+    .trim();
+
+  // Filter out font glyph names or binary noise (must contain at least 60% printable ASCII)
+  if (!s || s.length < 2) return '';
+  const printableChars = s.replace(/[^a-zA-Z0-9\s.,:%/\-()]/g, '').length;
+  if (printableChars / s.length < 0.6) return '';
+
+  // Ignore font identifiers or PostScript operators
+  if (/^\/(Font|CID|Length|Type|Filter|Encoding|Widths|ToUnicode)/i.test(s)) return '';
+
+  return s;
+}
+
+/**
  * Extracts human-readable text from a PDF Buffer or Base64 string without external dependencies.
+ * Strictly extracts within BT (Begin Text) ... ET (End Text) blocks to eliminate font/object stream binary noise.
  */
 export function extractTextFromPdfBuffer(pdfBuffer: Buffer): string {
   const textPieces: string[] = [];
   const bin = pdfBuffer.toString('binary');
+
+  // Helper to extract text from a decompressed or raw content stream
+  const parseStreamContent = (content: string) => {
+    // Only parse within BT ... ET blocks
+    const btRegex = /BT([\s\S]*?)ET/g;
+    let btMatch: RegExpExecArray | null;
+
+    while ((btMatch = btRegex.exec(content)) !== null) {
+      const block = btMatch[1];
+
+      // Extract (...) Tj
+      const tjRegex = /\(([\s\S]*?)\)\s*Tj/g;
+      let tjMatch: RegExpExecArray | null;
+      while ((tjMatch = tjRegex.exec(block)) !== null) {
+        const clean = cleanPdfString(tjMatch[1]);
+        if (clean) textPieces.push(clean);
+      }
+
+      // Extract [(...)...] TJ
+      const arrRegex = /\[([\s\S]*?)\]\s*TJ/g;
+      let arrMatch: RegExpExecArray | null;
+      while ((arrMatch = arrRegex.exec(block)) !== null) {
+        const inner = arrMatch[1];
+        const strRegex = /\(([\s\S]*?)\)/g;
+        let s: RegExpExecArray | null;
+        while ((s = strRegex.exec(inner)) !== null) {
+          const clean = cleanPdfString(s[1]);
+          if (clean) textPieces.push(clean);
+        }
+      }
+
+      // Extract single quotes text operator: 'string' '
+      const quoteRegex = /\(([\s\S]*?)\)\s*'/g;
+      let qMatch: RegExpExecArray | null;
+      while ((qMatch = quoteRegex.exec(block)) !== null) {
+        const clean = cleanPdfString(qMatch[1]);
+        if (clean) textPieces.push(clean);
+      }
+    }
+  };
 
   // 1. Inspect compressed stream ... endstream blocks
   const streamRegex = /stream[\r\n]+([\s\S]*?)[\r\n]+endstream/g;
@@ -36,60 +130,54 @@ export function extractTextFromPdfBuffer(pdfBuffer: Buffer): string {
       try {
         decompressed = zlib.inflateRawSync(rawStream).toString('utf-8');
       } catch {
-        decompressed = rawStream.toString('latin1');
+        // Not a standard deflate stream or uncompressed binary
+        continue;
       }
     }
 
-    // Extract (...) Tj
-    const tjRegex = /\(([\s\S]*?)\)\s*Tj/g;
-    let tjMatch: RegExpExecArray | null;
-    while ((tjMatch = tjRegex.exec(decompressed)) !== null) {
-      const clean = tjMatch[1].replace(/\\([()\\])/g, '$1').trim();
-      if (clean) textPieces.push(clean);
-    }
-
-    // Extract [(...)...] TJ
-    const arrRegex = /\[([\s\S]*?)\]\s*TJ/g;
-    let arrMatch: RegExpExecArray | null;
-    while ((arrMatch = arrRegex.exec(decompressed)) !== null) {
-      const inner = arrMatch[1];
-      const strRegex = /\(([\s\S]*?)\)/g;
-      let s: RegExpExecArray | null;
-      while ((s = strRegex.exec(inner)) !== null) {
-        const clean = s[1].replace(/\\([()\\])/g, '$1').trim();
-        if (clean) textPieces.push(clean);
-      }
+    if (decompressed.includes('BT') && decompressed.includes('ET')) {
+      parseStreamContent(decompressed);
     }
   }
 
-  // 2. Uncompressed fallback
-  const directTjRegex = /\(([\s\S]*?)\)\s*Tj/g;
-  while ((match = directTjRegex.exec(bin)) !== null) {
-    const clean = match[1].replace(/\\([()\\])/g, '$1').trim();
-    if (clean && !textPieces.includes(clean)) textPieces.push(clean);
+  // 2. Uncompressed fallback: check uncompressed BT ... ET in binary
+  if (textPieces.length === 0 && bin.includes('BT') && bin.includes('ET')) {
+    parseStreamContent(bin);
   }
 
   return textPieces.join(' ').replace(/\s+/g, ' ').trim();
 }
 
 /**
- * Parses base64 dataUrl (PDF or text).
+ * Parses base64 dataUrl (PDF, image, or text) returning text and any embedded images.
  */
-export function extractTextFromDataUrl(dataUrl: string): string {
-  if (!dataUrl) return '';
+export function extractDataFromPdfDataUrl(dataUrl: string): {
+  text: string;
+  embeddedImage?: string;
+} {
+  if (!dataUrl) return { text: '' };
 
   if (dataUrl.startsWith('data:application/pdf;base64,')) {
     const b64 = dataUrl.replace(/^data:application\/pdf;base64,/, '');
     const buf = Buffer.from(b64, 'base64');
-    return extractTextFromPdfBuffer(buf);
+    const text = extractTextFromPdfBuffer(buf);
+    const embeddedImage = extractFirstJpegFromPdf(buf) || undefined;
+    return { text, embeddedImage };
   }
 
   if (dataUrl.startsWith('data:text/')) {
     const b64 = dataUrl.split(',')[1];
-    return Buffer.from(b64, 'base64').toString('utf-8');
+    return { text: Buffer.from(b64, 'base64').toString('utf-8') };
   }
 
-  return '';
+  return { text: '' };
+}
+
+/**
+ * Parses base64 dataUrl for text only.
+ */
+export function extractTextFromDataUrl(dataUrl: string): string {
+  return extractDataFromPdfDataUrl(dataUrl).text;
 }
 
 const SCHOOL_KEYWORDS = [

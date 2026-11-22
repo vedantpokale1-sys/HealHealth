@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { env } from '../config/env';
 import { MANDATORY_DISCLAIMER } from '../services/safetyService';
-import { classifyDocumentContent, extractTextFromDataUrl } from '../services/documentParser';
+import { classifyDocumentContent, extractDataFromPdfDataUrl } from '../services/documentParser';
 
 export const reportRouter = Router();
 
@@ -32,10 +32,16 @@ reportRouter.post('/analyze', async (req, res, next) => {
     let { reportText, reportType, imageUrl, modelId } = parse.data;
     const selectedModel = modelId || env.AI_DEFAULT_MODEL;
 
-    // 1. If PDF base64 is provided, extract its real text
+    // 1. If PDF base64 is provided, extract its real text and any embedded scanned page images
     let extractedPdfText = '';
+    let activeVisionImageUrl = imageUrl;
+
     if (imageUrl && imageUrl.startsWith('data:application/pdf;base64,')) {
-      extractedPdfText = extractTextFromDataUrl(imageUrl);
+      const pdfData = extractDataFromPdfDataUrl(imageUrl);
+      extractedPdfText = pdfData.text;
+      if (pdfData.embeddedImage) {
+        activeVisionImageUrl = pdfData.embeddedImage;
+      }
       if (extractedPdfText) {
         reportText = `${reportText}\n\nExtracted Document Text:\n${extractedPdfText}`;
       }
@@ -86,12 +92,12 @@ For authentic medical documents:
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 20000);
 
-    const isImageFormat = !!imageUrl && imageUrl.startsWith('data:image/');
+    const isImageFormat = !!activeVisionImageUrl && activeVisionImageUrl.startsWith('data:image/');
 
     const userMessageContent = isImageFormat
       ? [
           { type: 'text', text: `Report Type: ${reportType}\n\nClinical Content / Notes:\n${reportText}` },
-          { type: 'image_url', image_url: { url: imageUrl } },
+          { type: 'image_url', image_url: { url: activeVisionImageUrl } },
         ]
       : `Report Type: ${reportType}\n\nContent:\n${reportText}`;
 
