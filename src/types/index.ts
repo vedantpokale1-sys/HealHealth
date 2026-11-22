@@ -59,7 +59,7 @@ export interface Appointment {
 export interface MedicalReport {
   id: string;
   title: string;
-  category: 'Blood Test' | 'Radiology' | 'Pathology' | 'Prescription' | 'Cardiology';
+  category: 'Blood Test' | 'Radiology' | 'Pathology' | 'Prescription' | 'Cardiology' | 'Serology' | 'Hematology';
   uploadDate: string;
   fileSize: string;
   fileName: string;
@@ -134,6 +134,13 @@ export interface ExtendedChatMessage extends ChatMessage {
   isEmergencyAlert?: boolean;
   isError?: boolean;
   failedPrompt?: string;
+  attachment?: {
+    name: string;
+    type: string;
+    size?: string;
+    dataUrl?: string;
+    isImage?: boolean;
+  };
 }
 
 export interface AnatomyRegion {

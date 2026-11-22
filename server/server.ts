@@ -28,7 +28,8 @@ app.use(
   })
 );
 
-app.use(express.json({ limit: '5mb' }));
+app.use(express.json({ limit: '25mb' }));
+app.use(express.urlencoded({ extended: true, limit: '25mb' }));
 
 // Safe non-sensitive request logging
 app.use((req, res, next) => {

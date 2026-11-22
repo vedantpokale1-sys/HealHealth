@@ -16,11 +16,20 @@ aiRouter.get('/models', (req, res) => {
 
 const chatSchema = z.object({
   message: z.string().min(1, 'Message is required'),
+  imageUrl: z.string().optional(),
+  attachment: z
+    .object({
+      name: z.string(),
+      type: z.string(),
+      size: z.string().optional(),
+      content: z.string().optional(),
+    })
+    .optional(),
   history: z
     .array(
       z.object({
         role: z.enum(['user', 'assistant', 'system']),
-        content: z.string(),
+        content: z.any(),
       })
     )
     .optional(),
@@ -36,7 +45,7 @@ aiRouter.post('/chat', async (req, res) => {
       return res.status(400).json({ error: 'Please enter a valid message' });
     }
 
-    const { message, history, modelId, language } = parse.data;
+    const { message, imageUrl, attachment, history, modelId, language } = parse.data;
 
     // 1. Evaluate deterministic medical safety
     const safety = evaluateSafety(message);
@@ -47,6 +56,8 @@ aiRouter.post('/chat', async (req, res) => {
     // 3. Generate guidance via AI Router
     const aiResult = await generateClinicalGuidance({
       userMessage: message,
+      imageUrl,
+      attachment,
       history,
       modelId,
       language,

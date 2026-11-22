@@ -21,6 +21,10 @@ import {
   Cpu,
   RefreshCw,
   Edit3,
+  Paperclip,
+  FileText,
+  Image as ImageIcon,
+  X,
 } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
@@ -32,11 +36,20 @@ export const AiNavigatorPage: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { aiChatMessages: messages, setAiChatMessages: setMessages, clearAiChat } = useApp();
 
   const [input, setInput] = useState('');
   const [isListening, setIsListening] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
+  const [attachedFile, setAttachedFile] = useState<{
+    name: string;
+    type: string;
+    size: string;
+    content?: string;
+    dataUrl?: string;
+    isImage?: boolean;
+  } | null>(null);
 
   // Model Selection
   const [availableModels, setAvailableModels] = useState<AiModelOption[]>([
@@ -89,21 +102,55 @@ export const AiNavigatorPage: React.FC = () => {
   }, [messages, isTyping]);
 
   const suggestedPrompts = [
+    'Analyze sample Complete Blood Count (CBC) with Platelets (PDF)',
+    'Analyze sample Dengue NS1 & Acute Febrile Serology Panel',
     'I have a sore throat, mild fever, and difficulty swallowing. What should I do?',
-    'I have persistent morning headaches and sensitivity to light.',
-    'Sharp knee pain and joint stiffness when standing up after long sitting.',
     'My recent report shows elevated LDL cholesterol. What questions should I ask my doctor?',
   ];
 
-  const handleSend = async (userText: string) => {
-    const trimmed = userText.trim();
-    if (!trimmed || isTyping) return;
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const fileSizeFormatted =
+      file.size > 1024 * 1024
+        ? `${(file.size / (1024 * 1024)).toFixed(1)} MB`
+        : `${Math.round(file.size / 1024)} KB`;
+
+    const isImage = file.type.startsWith('image/');
+    const reader = new FileReader();
+
+    reader.onload = () => {
+      setAttachedFile({
+        name: file.name,
+        type: file.type || (isImage ? 'image/jpeg' : 'application/pdf'),
+        size: fileSizeFormatted,
+        dataUrl: reader.result as string,
+        isImage,
+      });
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  };
+
+  const handleSend = async (userText?: string, fileOverride?: typeof attachedFile) => {
+    const fileToUpload = fileOverride !== undefined ? fileOverride : attachedFile;
+    const rawText = userText !== undefined ? userText : input;
+    let trimmed = rawText.trim();
+
+    if (!trimmed && !fileToUpload) return;
+    if (isTyping) return;
+
+    if (!trimmed && fileToUpload) {
+      trimmed = `Please analyze my attached clinical report (${fileToUpload.name}), explain any abnormal markers in plain language, and recommend 3 questions for my doctor.`;
+    }
 
     const userMsg: ExtendedChatMessage = {
       id: `msg_${Date.now()}`,
       sender: 'user',
       text: trimmed,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      attachment: fileToUpload ? { ...fileToUpload } : undefined,
     };
 
     // Prepare current history snapshot before adding the new message
@@ -117,13 +164,23 @@ export const AiNavigatorPage: React.FC = () => {
 
     // Clear input once the message is successfully accepted for processing
     setInput('');
+    setAttachedFile(null);
     setMessages((prev) => [...prev, userMsg]);
     setIsTyping(true);
 
     try {
-      // Call Backend AI Chat Route
+      // Call Backend AI Chat Route with Multimodal Support
       const response = await api.sendAiChat({
         message: trimmed,
+        imageUrl: fileToUpload?.dataUrl,
+        attachment: fileToUpload
+          ? {
+              name: fileToUpload.name,
+              type: fileToUpload.type,
+              size: fileToUpload.size,
+              content: fileToUpload.content,
+            }
+          : undefined,
         history: historyPayload,
         modelId: selectedModel,
         language: selectedLanguage,
@@ -295,6 +352,48 @@ export const AiNavigatorPage: React.FC = () => {
                       : 'bg-white border border-slate-200 text-slate-900 rounded-bl-none'
                   }`}
                 >
+                  {/* Attached Medical Document / Image */}
+                  {msg.attachment && (
+                    <div
+                      className={`mb-3 p-2.5 rounded-xl flex items-center gap-2.5 ${
+                        isUser
+                          ? 'bg-blue-700/60 border border-blue-400/40 text-white'
+                          : 'bg-slate-100 border border-slate-200 text-slate-800'
+                      }`}
+                    >
+                      {msg.attachment.isImage && msg.attachment.dataUrl ? (
+                        <img
+                          src={msg.attachment.dataUrl}
+                          alt={msg.attachment.name}
+                          className="w-12 h-12 object-cover rounded-lg border border-white/40 shrink-0 bg-white"
+                        />
+                      ) : (
+                        <div
+                          className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${
+                            isUser ? 'bg-blue-800 text-blue-100' : 'bg-teal-100 text-teal-700'
+                          }`}
+                        >
+                          <FileText className="w-5 h-5" />
+                        </div>
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-bold text-xs truncate">{msg.attachment.name}</span>
+                          <span
+                            className={`text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider ${
+                              isUser ? 'bg-blue-500/50 text-white' : 'bg-teal-50 text-teal-700 border border-teal-200'
+                            }`}
+                          >
+                            {msg.attachment.isImage ? 'Image' : 'PDF Report'}
+                          </span>
+                        </div>
+                        <p className={`text-[10px] mt-0.5 ${isUser ? 'text-blue-100' : 'text-slate-500'}`}>
+                          {msg.attachment.size || 'Diagnostic Attachment'} • Clinical telemetry evaluated
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
                   <p className="whitespace-pre-line leading-relaxed">{msg.text}</p>
 
                   {/* Retry Action on Failure */}
@@ -466,21 +565,78 @@ export const AiNavigatorPage: React.FC = () => {
         </div>
       )}
 
+      {/* Hidden file input */}
+      <input
+        type="file"
+        ref={fileInputRef}
+        accept=".pdf,image/*,.png,.jpg,.jpeg,.webp,.bmp"
+        className="hidden"
+        onChange={handleFileSelect}
+      />
+
       {/* Chat Input Bar */}
       <div className="p-4 bg-white border-t border-slate-200">
+        {/* Attachment preview if user picked a file */}
+        {attachedFile && (
+          <div className="mb-2 px-3 py-2 bg-teal-50 border border-teal-200 rounded-xl flex items-center justify-between gap-3 text-xs animate-in fade-in">
+            <div className="flex items-center gap-2.5 min-w-0">
+              {attachedFile.isImage && attachedFile.dataUrl ? (
+                <img
+                  src={attachedFile.dataUrl}
+                  alt="Attachment Preview"
+                  className="w-9 h-9 rounded-lg object-cover border border-teal-300 shrink-0 bg-white"
+                />
+              ) : (
+                <div className="w-9 h-9 rounded-lg bg-teal-100 text-teal-700 flex items-center justify-center shrink-0">
+                  <FileText className="w-5 h-5" />
+                </div>
+              )}
+              <div className="min-w-0">
+                <div className="flex items-center gap-1.5">
+                  <span className="font-bold text-teal-900 truncate">{attachedFile.name}</span>
+                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-teal-200/60 text-teal-800 uppercase">
+                    {attachedFile.isImage ? 'Image' : 'PDF'}
+                  </span>
+                </div>
+                <p className="text-[10px] text-teal-700 mt-0.5">
+                  {attachedFile.size} • Ready for AI clinical review
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setAttachedFile(null)}
+              className="p-1 text-teal-700 hover:text-teal-950 hover:bg-teal-100 rounded-lg transition"
+              title="Remove Attachment"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+
         <form
           onSubmit={(e) => {
             e.preventDefault();
-            if (!isTyping && input.trim()) {
+            if (!isTyping && (input.trim() || attachedFile)) {
               handleSend(input);
             }
           }}
           className="flex items-center gap-2"
         >
+          {/* File Upload Attachment Button */}
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="p-2.5 rounded-xl border text-slate-600 hover:text-teal-700 hover:bg-teal-50 bg-slate-50 border-slate-200 transition shrink-0"
+            title="Attach Medical Report or Image (PDF, JPG, PNG)"
+          >
+            <Paperclip className="w-5 h-5" />
+          </button>
+
           <button
             type="button"
             onClick={handleVoiceToggle}
-            className={`p-2.5 rounded-xl border transition ${
+            className={`p-2.5 rounded-xl border transition shrink-0 ${
               isListening
                 ? 'bg-rose-500 text-white border-rose-600 animate-pulse'
                 : 'text-slate-500 hover:text-slate-800 bg-slate-50 border-slate-200'
@@ -497,20 +653,24 @@ export const AiNavigatorPage: React.FC = () => {
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
-                if (!isTyping && input.trim()) {
+                if (!isTyping && (input.trim() || attachedFile)) {
                   handleSend(input);
                 }
               }
             }}
             disabled={isTyping}
-            placeholder={`Describe symptoms or ask clinical questions (${activeModelObj?.name || 'AI'})...`}
+            placeholder={
+              attachedFile
+                ? `Add notes or send to analyze ${attachedFile.name}...`
+                : `Describe symptoms, ask questions, or attach reports (${activeModelObj?.name || 'AI'})...`
+            }
             className="flex-1 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition disabled:opacity-60"
           />
 
           <button
             type="submit"
-            disabled={!input.trim() || isTyping}
-            className="px-4 py-2.5 bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white rounded-xl transition flex items-center gap-1.5 font-semibold text-sm shadow-sm"
+            disabled={(!input.trim() && !attachedFile) || isTyping}
+            className="px-4 py-2.5 bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white rounded-xl transition flex items-center gap-1.5 font-semibold text-sm shadow-sm shrink-0"
           >
             <span>Send</span>
             <Send className="w-4 h-4" />

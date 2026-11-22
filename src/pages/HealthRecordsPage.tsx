@@ -18,6 +18,7 @@ import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
 import { Modal } from '../components/ui/Modal';
 import { MedicalReport } from '../types';
+import { downloadMedicalReportPdf, printMedicalReport } from '../utils/pdfGenerator';
 
 export const HealthRecordsPage: React.FC = () => {
   const { reports } = useApp();
@@ -142,11 +143,11 @@ export const HealthRecordsPage: React.FC = () => {
                 <Button
                   variant="secondary"
                   size="sm"
-                  onClick={() => alert(`Simulated secure download of ${doc.fileName}`)}
-                  leftIcon={<Download className="w-3.5 h-3.5 text-slate-500" />}
+                  onClick={() => downloadMedicalReportPdf(doc, user?.name || 'Vedant Pokale')}
+                  leftIcon={<Download className="w-3.5 h-3.5 text-teal-600" />}
                   className="text-xs"
                 >
-                  Download
+                  Download PDF
                 </Button>
               </div>
             </div>
@@ -163,6 +164,7 @@ export const HealthRecordsPage: React.FC = () => {
       >
         <div className="space-y-4">
           <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs space-y-1">
+            <div><strong>Patient Name:</strong> {user?.name || 'Vedant Pokale'}</div>
             <div><strong>Category:</strong> {viewingDoc?.category}</div>
             <div><strong>Upload Date:</strong> {viewingDoc?.uploadDate}</div>
             {viewingDoc?.doctorName && <div><strong>Ordering Clinician:</strong> {viewingDoc?.doctorName}</div>}
@@ -175,7 +177,24 @@ export const HealthRecordsPage: React.FC = () => {
             </p>
           </div>
 
-          <div className="flex justify-end pt-2">
+          <div className="flex items-center justify-between pt-2 border-t border-slate-100">
+            <div className="flex items-center gap-2">
+              <Button
+                variant="teal"
+                size="sm"
+                onClick={() => viewingDoc && downloadMedicalReportPdf(viewingDoc, user?.name || 'Vedant Pokale')}
+                leftIcon={<Download className="w-3.5 h-3.5" />}
+              >
+                Download PDF
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => viewingDoc && printMedicalReport(viewingDoc, user?.name || 'Vedant Pokale')}
+              >
+                Printable View
+              </Button>
+            </div>
             <Button variant="outline" size="sm" onClick={() => setViewingDoc(null)}>
               Close
             </Button>

@@ -85,11 +85,15 @@ export const api = {
   // AI Healthcare Chat
   async sendAiChat({
     message,
+    imageUrl,
+    attachment,
     history = [],
     modelId,
     language = 'en',
   }: {
     message: string;
+    imageUrl?: string;
+    attachment?: { name: string; type: string; size?: string; content?: string };
     history?: Array<{ role: 'user' | 'assistant' | 'system'; content: string }>;
     modelId?: string;
     language?: string;
@@ -101,7 +105,7 @@ export const api = {
       const res = await fetch(`${API_BASE}/ai/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message, history, modelId, language }),
+        body: JSON.stringify({ message, imageUrl, attachment, history, modelId, language }),
         signal: controller.signal,
       });
 
@@ -234,8 +238,9 @@ export const api = {
 
   // Report Analyzer
   async analyzeReport(data: {
-    reportText: string;
+    reportText?: string;
     reportType?: string;
+    imageUrl?: string;
     modelId?: string;
   }): Promise<{
     summary: string;

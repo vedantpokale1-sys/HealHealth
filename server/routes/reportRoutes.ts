@@ -6,8 +6,9 @@ import { MANDATORY_DISCLAIMER } from '../services/safetyService';
 export const reportRouter = Router();
 
 const analyzeReportSchema = z.object({
-  reportText: z.string().min(1, 'Report text or lab values are required'),
+  reportText: z.string().optional().default('Standard Pathology and Biochemistry Panel'),
   reportType: z.string().optional().default('Blood Test / Pathology'),
+  imageUrl: z.string().optional(),
   modelId: z.string().optional(),
 });
 
@@ -27,12 +28,12 @@ reportRouter.post('/analyze', async (req, res, next) => {
       return res.status(400).json({ error: parse.error.format() });
     }
 
-    const { reportText, reportType, modelId } = parse.data;
+    const { reportText, reportType, imageUrl, modelId } = parse.data;
     const selectedModel = modelId || env.AI_DEFAULT_MODEL;
 
     const systemPrompt = `You are a clinical pathology analysis assistant.
-Analyze the following patient lab test or medical report.
-Identify any values outside typical reference intervals (e.g. elevated blood sugar, lipids, liver enzymes, anemia).
+Analyze the following patient lab test or medical report (which may be provided as text or image).
+Identify any values outside typical reference intervals (e.g. elevated blood sugar, lipids, liver enzymes, anemia, platelet count).
 Explain the findings in simple, encouraging, non-alarmist language.
 Draft 3 constructive questions the patient should bring to their doctor.
 Suggest the most appropriate clinical specialist.
@@ -47,15 +48,22 @@ Format response strictly as valid JSON:
   "suggestedSpecialist": "e.g. Endocrinologist, Cardiologist, or General Physician"
 }`;
 
-    if (!env.AI_API_KEY) {
-      throw new Error('AI Provider API key is not configured.');
-    }
-
     const apiUrl = getChatCompletionsUrl(env.AI_BASE_URL);
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 35000);
+    const timeoutId = setTimeout(() => controller.abort(), 20000);
+
+    const userMessageContent = imageUrl
+      ? [
+          { type: 'text', text: `Report Type: ${reportType}\n\nClinical Content / Patient Notes:\n${reportText}` },
+          { type: 'image_url', image_url: { url: imageUrl } },
+        ]
+      : `Report Type: ${reportType}\n\nContent:\n${reportText}`;
 
     try {
+      if (!env.AI_API_KEY) {
+        throw new Error('AI Provider API key is not configured.');
+      }
+
       const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
@@ -67,7 +75,7 @@ Format response strictly as valid JSON:
           model: selectedModel,
           messages: [
             { role: 'system', content: systemPrompt },
-            { role: 'user', content: `Report Type: ${reportType}\n\nContent:\n${reportText}` },
+            { role: 'user', content: userMessageContent },
           ],
           temperature: 0.1,
           max_tokens: 2048,
